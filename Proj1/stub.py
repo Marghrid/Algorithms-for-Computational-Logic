@@ -18,8 +18,42 @@ class Enc:
          self.constraints = []
          self.fresh = 0
 
-    def x(self,i): return 'x_{}'.format(i)
-    def y(self,i): return 'y_{}'.format(i)
+    # 1 iff node i is a leaf node, i = 1,...,N
+    def v(self,i):
+        assert(i >= 1 and i <= self.node_count)
+        return f'v_{i}'
+
+    def l(self, i, j):
+        assert(i >= 1 and i <= self.node_count)
+        assert(j%2 == 0)
+        assert(j >= i+1 and j <= min(2*i, self.node_count-1))
+        return f'l_{i}_{j}'
+
+    def r(self, i, j):
+        assert(i >= 1 and i <= self.node_count)
+        assert(j%2 == 0)
+        assert(j >= i+2 and j <= min(2*i+1, self.node_count))
+        return f'r_{i}_{j}'
+    
+    def p(self, i, j): return f'p_{i}_{j}'
+        assert(i >= 1 and i <= self.node_count-1)
+        assert(j >= 2 and i <= self.node_count)
+
+    def LR(self,i):
+        if (i+1)%2 == 0:
+            first = i+1
+        else:
+            first = i+2
+
+        return range(first, min(2*i, self.node_count-1), 2)
+
+    def RR(self,i):
+        if (i+2)%2 == 1:
+            first = i+2
+        else:
+            first = i+3
+
+        return range(first, min(2*i+1, self.node_count), 2)
 
     def add_constraint(self, constraint):
         '''add constraints, which is a list of literals'''
@@ -42,6 +76,10 @@ class Enc:
         '''add iff constraint between l1 and l2'''
         self.constraints.append([neg(l1), l2])
         self.constraints.append([l1, neg(l2)])
+
+    def add_impl(self, l1, l2):
+        '''add implication constraint between l1 and l2'''
+        self.constraints.append([neg(l1), l2])
 
 
     def print_model(self,model):
@@ -86,16 +124,28 @@ class Enc:
 
     def enc(self, samples):
         '''encode the problem'''
+
+        # root node is not a leaf
+        self.add_constraint([neg(self.v(1))])
+
+        # if i is a leaf then i has no children
+        for i in range(2, self.node_count+1): #TODO: check
+            for j in self.LR(i):
+        self.add_impl(self.v(i), neg(self.l(i, j)))
+
+
+
         # -x1 | -x2
-        self.add_constraint([neg(self.x(1)), neg(self.x(2))])
+        # self.add_constraint([neg(self.x(1)), neg(self.x(2))])
         # x1 | x2
-        self.add_constraint([self.x(1), self.x(2)])
+        # self.add_constraint([self.x(1), self.x(2)])
         # x1 <=> x2
-        self.add_iff(self.x(3), self.x(4))
+        # self.add_iff(self.x(3), self.x(4))
         # y1 | (y2 & y3)
-        self.add_constraint([self.y(1), self.mk_and(self.y(2),self.y(3))])
+        # self.add_constraint([self.y(1), self.mk_and(self.y(2),self.y(3))])
         # -y1
-        self.add_constraint([neg(self.y(1))])
+        # self.add_constraint([neg(self.y(1))])
+
         
 def get_model(lns):
     vals=dict()
