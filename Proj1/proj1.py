@@ -6,7 +6,10 @@
 import sys,subprocess 
 from itertools import combinations
 
-solver = './solvers/maple'
+solver_dir = './solvers/'
+solvers = ['cadical', 'cryptominisat5_simple', 'MapleCBTCoreFirst', 'optsat', 'smallsat', 'lingeling', 'mergesat']
+solver_w_options = [['./solvers/cryptominisat5_simple', '--sls=walksat'], ['./solvers/cryptominisat5_simple', '--sls=yalsat']]
+solver = solver_dir + solvers[0]
 
 def neg(l): return l[1:] if l[0] == '-' else '-'+l
 def var(l): return l[1:] if l[0] == '-' else l
@@ -240,7 +243,7 @@ if __name__ == "__main__":
 	print("# encoded constraints")
 	print("# " + "\n# ".join(map(str, e.constraints)))
 	print("# END encoded constraints")
-	print("# sending to solver '" + solver + "'")
+	print("# sending to solver '" + str(solver) + "'")
 	cnf = e.mk_cnf(False)
 	p = subprocess.Popen(solver, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	(po, pe) = p.communicate(input=bytes(cnf, encoding ='utf-8'))
