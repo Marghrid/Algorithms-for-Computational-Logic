@@ -126,7 +126,18 @@ class Enc:
 			if v in model and not model[v]: val='F'
 			print('# {}={} ({})'.format(str_var,val,v))
 		print('# === end of model')
-		print('# === tree (TODO)')
+
+		print('# === tree')
+		print('digraph T {')
+		for str_var in sorted(self.var_map.keys()):
+			if str_var[0] == 'p':
+				v = self.var_map[str_var]
+				if v in model and model[v]:
+					j = str_var[2] # get parent name from var name
+					i = str_var[4] # get child name from var name
+					print(f'  "{i}" -> "{j}"  [label="T or F?"]')
+					#TODO: add freature being decided in each step and the label for eache edge
+		print('}')
 		print('# === end of tree')
 
 
