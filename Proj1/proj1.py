@@ -6,7 +6,7 @@
 import sys,subprocess 
 from itertools import combinations
 
-solver = './lingeling'
+solver = './solvers/maple'
 
 def neg(l): return l[1:] if l[0] == '-' else '-'+l
 def var(l): return l[1:] if l[0] == '-' else l
@@ -185,12 +185,8 @@ class Enc:
 
 		# non-leaf node must have a child (4)
 		for i in range(1, self.node_count+1):
-			
-			# In the case that LR(i) returns an empty list we are in the last 2 nodes
-			# The last 2 nodes will always be leaf nodes.
-			list_var = [self.l(i,j) for j in self.LR(i)]
 			# This is how it is in the paper:
-			#self.add_sum_eq1(list_var, [self.v(i)])
+			#self.add_sum_eq1([self.l(i,j) for j in self.LR(i)], [self.v(i)])
 			# This is equivalent
 			self.add_sum_ge1([self.l(i,j) for j in self.LR(i)], [self.v(i)])
 
@@ -205,7 +201,6 @@ class Enc:
 		for j in range(2, self.node_count+1):
 			self.add_sum_eq1([self.p(j, i) for i in range(j//2, j)])
 
-		
 def get_model(lns):
 	vals=dict()
 	found=False
