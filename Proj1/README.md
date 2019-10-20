@@ -1,10 +1,16 @@
 # Project 1: Encoding Decision Trees with SAT
 
 ## Run:
+
 `$ python3 proj1.py < <sample_file> `
 
 Example:
+
 `$ python3 proj1.py < t6_sat/t_10_6_7.smp `
+
+Check results:
+
+`python proj1.py < t6_sat/t_10_6_7.smp |  python3 chk.py  t6_sat/t_10_6_7.smp`
 
 ## Solvers:
 
