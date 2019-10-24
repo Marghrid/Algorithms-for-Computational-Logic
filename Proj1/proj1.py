@@ -5,6 +5,7 @@
 # Copyright (C) 2019, Mikolas Janota
 import sys,subprocess 
 from enc import Enc, var, sign
+import argparse
 
 solver_dir = './solvers/'
 solvers = ['cadical', 'cryptominisat5_simple', 'MapleCBTCoreFirst', 'optsat', 'smallsat', 'lingeling', 'mergesat']
@@ -40,28 +41,57 @@ def parse(f):
 
 
 if __name__ == "__main__":
-	debug_solver = False 
+	debug_solver = False
+
+	argparser = argparse.ArgumentParser()
+	argparser.add_argument('-t', '--print_tree', action='store_true', help='print decision tree')
+	argparser.add_argument('-m', '--print_model', action='store_true', help='print model')
+	argparser.add_argument('-c', '--print_constraints', action='store_true', help='print all encoded constraints')
+	argparser.add_argument('-v', '--verbose', action='store_true', help='print everything')
+	cmd_args = argparser.parse_args()
+
+	print_tree = cmd_args.print_tree
+	print_constraints = cmd_args.print_constraints
+	print_model = cmd_args.print_model
+	if cmd_args.verbose:
+		print_tree = True
+		print_constraints = True
+		print_model = True
+
 
 	print("# reading from stdin")
 	nms, samples = parse(sys.stdin)
+
 	print("# encoding")
 	e = Enc(nms[0], nms[1])
 	e.enc(samples)
-	print("# encoded constraints")
-	print("# " + "\n# ".join(map(str, e.constraints)))
-	print("# END encoded constraints")
+
+	if print_constraints:
+		print("# encoded constraints")
+		print("# " + "\n# ".join(map(str, e.constraints)))
+		print("# END encoded constraints")
+
 	print("# sending to solver '" + str(solver) + "'")
 	cnf = e.mk_cnf(False)
 	p = subprocess.Popen(solver, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	(po, pe) = p.communicate(input=bytes(cnf, encoding ='utf-8'))
+	
 	if debug_solver:
 		print('\n'.join(lns), file=sys.stderr)
 		print(cnf, file=sys.stderr)
+
 	print("# decoding result from solver")
 	rc = p.returncode
 	lns = str(po, encoding ='utf-8').splitlines()
+	
 	if rc == 10:
-		e.print_model(get_model(lns))
+		print("SAT")
+		if print_model:
+			e.print_model(get_model(lns))
+		if print_tree:
+			e.print_tree(get_model(lns))
+
+	
 	elif rc == 20:
 		print("UNSAT")
 	else:
