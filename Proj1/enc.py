@@ -34,47 +34,58 @@ class Enc:
 		assert(i >= 1 and i <= self.node_count)
 		return f'v_{i}'
 
+	# 1 iff node i has node j as the left child, j in LR(i), i = 1,...,N
 	def l(self, i, j):
 		assert(i >= 1 and i <= self.node_count)
 		assert(j%2 == 0)
 		assert(j >= i+1 and j <= min(2*i, self.node_count-1))
 		return f'l_{i}_{j}'
 
+	# 1 iff node i has node j as the right child, j in RR(i), i = 1,...,N
 	def r(self, i, j):
 		assert(i >= 1 and i <= self.node_count)
 		assert(j%2 == 1)
 		assert j >= i+2 and j <= min(2*i+1, self.node_count), f'j is {j}, i is {i} and min(2*i+1, self.node_count) is {min(2*i+1, self.node_count)}'
 		return f'r_{i}_{j}'
 	
+	# 1 iff the parent of node j is node i, j = 2,...,N, i = 1,...,N −1
 	def p(self, j, i): 
 		assert(i >= 1 and i <= self.node_count-1)
 		assert(j >= 2 and j <= self.node_count)
 		return f'p_{j}_{i}'
 
+	# 1 iff feature r is assigned to node j, r = 1,...,K, j = 1,...,N
 	def a(self, r, j):
 		assert(r >= 1 and r <= self.feat_count)
 		assert(j >= 1 and j <= self.node_count)
 		return f'a_{r}_{j}'
 
+	# 1 iff feature r is being discriminated against by node j, r = 1,...,K, j = 1,...,N,
 	def u(self, r, j):
 		assert(r >= 1 and r <= self.feat_count)
 		assert(j >= 1 and j <= self.node_count)
 		return f'u_{r}_{j}'
 
+	# 1 iff feature r is discriminated for value 0 by node j,
+	#  or by one of its ancestors, r = 1,...,K, j = 1,...,N,
 	def d0(self, r, j):
 		assert(r >= 1 and r <= self.feat_count)
 		assert(j >= 1 and j <= self.node_count)
 		return f'd0_{r}_{j}'
 
+	# 1 iff feature r is discriminated for value 1 by node j,
+	#  or by one of its ancestors, r = 1,...,K, j = 1,...,N,
 	def d1(self, r, j):
 		assert(r >= 1 and r <= self.feat_count)
 		assert(j >= 1 and j <= self.node_count)
 		return f'd1_{r}_{j}'
 
+	# 1 iff class of leaf node j is 1, j = 1,...,N.
 	def c(self, j):
 		assert(j >= 1 and j <= self.node_count)
 		return f'c_{j}'
 
+	# aux var for sequential counter encoding for <= 1 constraints
 	def s(self, i):
 		''' variable used for sequential counter encoding '''
 		return f's_{i}_{self.s_fresh}'
@@ -114,7 +125,6 @@ class Enc:
 		"""
 		for lit in sum_lits:
 			self.add_constraint(or_lits + [neg(lit)])
-
 
 	def add_sum_eq1(self, sum_lits, or_lits = []):
 		"""
@@ -184,6 +194,30 @@ class Enc:
 		for lit2 in clause:
 			self.add_constraint([neg(lit2), lit])
 
+	def print_solution(self, model):
+		'''
+		prints solution output, according to the format:
+		- 'l i j' representing that j is a left (0) child of i
+		- 'r i j' representing that j is a right (1) child of i
+		- 'c i v' leaf i responds with the class v
+		- 'a r i' the feature r is assigned to internal node i
+		'''
+
+		for str_var in sorted(self.var_map.keys()):
+			if str_var[0] in ['l', 'r', 'a']: # all vars with 2 args are treated the same
+				dimacs_idx = self.var_map[str_var] # get dimacs idx
+				if dimacs_idx in model and model[dimacs_idx]: # if var is true
+					var_name = str_var[0]
+					var_arg1 = str_var[2]
+					var_arg2 = str_var[4]
+					print(f'{var_name} {var_arg1} {var_arg2}')
+
+			elif str_var[0] == 'c': # c vars have only one arg
+				dimacs_idx = self.var_map[str_var] # get dimacs idx
+				if dimacs_idx in model: # if var is true
+					j = str_var[2]
+					print(f'c {j} {"1" if model[dimacs_idx] else "0"}')
+
 	def print_model(self,model):
 		'''prints SAT model'''
 		print('# === model')
@@ -202,7 +236,7 @@ class Enc:
 		node_labels = {}
 		is_node_leaf = {}
 		for str_var in sorted(self.var_map.keys()):
-			if str_var[0] == 'v':  # p vars
+			if str_var[0] == 'v':  # v vars
 				dimacs_idx = self.var_map[str_var]
 				if dimacs_idx in model: # if var is true
 					i = str_var[2] # feature

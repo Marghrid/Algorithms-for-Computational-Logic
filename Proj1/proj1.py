@@ -86,6 +86,7 @@ if __name__ == "__main__":
 	
 	if rc == 10:
 		print("SAT")
+		e.print_solution(get_model(lns))
 		if print_model:
 			e.print_model(get_model(lns))
 		if print_tree:
