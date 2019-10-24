@@ -185,7 +185,7 @@ class Enc:
 			self.add_constraint([neg(lit2), lit])
 
 	def print_model(self,model):
-		'''prints SAT model, eventually should print the decision tree'''
+		'''prints SAT model'''
 		print('# === model')
 		for str_var in sorted(self.var_map.keys()):
 			v = self.var_map[str_var]
@@ -195,9 +195,10 @@ class Enc:
 			print('# {}={} ({})'.format(str_var,val,v))
 		print('# === end of model')
 
+	def print_tree(self, model):
+		''' prints the decision tree '''
 		print('# === tree')
 		print('digraph T {')
-
 		node_labels = {}
 		is_node_leaf = {}
 		for str_var in sorted(self.var_map.keys()):
@@ -322,13 +323,8 @@ class Enc:
 				for i in range(j//2, j):
 					aux1 = self.mk_and(self.p(j, i), self.d1(r, i))
 
-					print(j, 'in', self.LR(i))
 					if j in self.LR(i):
-						print(True)
-						print(self.l(i, j))
 						aux2 = self.mk_and(self.a(r, i), self.l(i, j))
-						print(aux2)
-
 						big_OR.extend([aux1, aux2])
 					else:
 						big_OR.append(aux1)
