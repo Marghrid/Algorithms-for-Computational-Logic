@@ -94,8 +94,8 @@ if __name__ == "__main__":
         print('USAGE: {} <sample-file>'.format(sys.argv[0]))
         exit(1)
 
-    with open(sys.argv[1]) as sf:
-        nms, samples = parse_samples(sf)
+    with open(sys.argv[1]) as sample_file:
+        nms, samples = parse_samples(sample_file)
 
     if chk(sys.stdin, samples):
         print('OK')
