@@ -143,7 +143,7 @@ class Enc:
 		if len(sum_lits) == 0:
 			return
 		if len(sum_lits) == 1:
-			self.add_constraint(sum_lits + or_lits)
+			#self.add_constraint(sum_lits + or_lits)
 			return
 		
 		lit_pairs = list(combinations(sum_lits, 2))
@@ -161,7 +161,7 @@ class Enc:
 		if len(sum_lits) == 0:
 			return
 		if len(sum_lits) == 1:
-			self.add_constraint(sum_lits + or_lits)
+			#self.add_constraint(sum_lits + or_lits)
 			return
 
 		self.s_fresh += 1
@@ -174,7 +174,6 @@ class Enc:
 			self.add_constraint([neg(sum_lits[i]), self.s(i)])          # s_i is true if x_1 is true
 			self.add_constraint([neg(self.s(i-1)), self.s(i)])          # si is true if s(i-1) is true
 			self.add_constraint([neg(sum_lits[i]), neg(self.s(i-1))])   # x_i can only be set to true is s(i-1) is false
-
 
 	def add_sum_ge1(self, sum_lits, or_lits = []):
 		"""
@@ -203,20 +202,34 @@ class Enc:
 		- 'a r i' the feature r is assigned to internal node i
 		'''
 
+		# I need to know v(i) so the values of vars are printed only for relevant nodes:
+		#  l, r, and a are only for internal nodes i s.t. v(i) = False
+		#  c is only for leaf nodes i s.t. v(i) = True
+
 		for str_var in sorted(self.var_map.keys()):
-			if str_var[0] in ['l', 'r', 'a']: # all vars with 2 args are treated the same
+			if str_var[0] in ['l', 'r']: # l and r are treated the same
 				dimacs_idx = self.var_map[str_var] # get dimacs idx
 				if dimacs_idx in model and model[dimacs_idx]: # if var is true
-					var_name = str_var[0]
-					var_arg1 = str_var[2]
-					var_arg2 = str_var[4]
-					print(f'{var_name} {var_arg1} {var_arg2}')
+					var_name, i, j = str_var.split("_")
+					v_dimax_idx = self.var_map[self.v(int(i))]
+					if v_dimax_idx in model and not model[v_dimax_idx]: # i is an internal node
+						print(f'{var_name} {i} {j}')
+
+			elif str_var[0] == 'a': # a vars
+				dimacs_idx = self.var_map[str_var] # get dimacs idx
+				if dimacs_idx in model and model[dimacs_idx]: # if var is true
+					_, r, i = str_var.split("_")
+					v_dimax_idx = self.var_map[self.v(int(i))]
+					if v_dimax_idx in model and not model[v_dimax_idx]: # i is an internal node
+						print(f'a {r} {i}')
 
 			elif str_var[0] == 'c': # c vars have only one arg
 				dimacs_idx = self.var_map[str_var] # get dimacs idx
 				if dimacs_idx in model: # if var is true
-					j = str_var[2]
-					print(f'c {j} {"1" if model[dimacs_idx] else "0"}')
+					_, j = str_var.split("_")
+					v_dimax_idx = self.var_map[self.v(int(j))]
+					if v_dimax_idx in model and model[v_dimax_idx]: # j is a leaf node
+						print(f'c {j} {"1" if model[dimacs_idx] else "0"}')
 
 	def print_model(self,model):
 		'''prints SAT model'''
@@ -239,34 +252,28 @@ class Enc:
 			if str_var[0] == 'v':  # v vars
 				dimacs_idx = self.var_map[str_var]
 				if dimacs_idx in model: # if var is true
-					i = str_var[2] # feature
+					_, i = str_var.split("_")
 					is_node_leaf[i] = model[dimacs_idx]
-
 
 		for str_var in sorted(self.var_map.keys()):
 			if str_var[0] == 'a': # a vars
 				dimacs_idx = self.var_map[str_var]
 				if dimacs_idx in model and model[dimacs_idx]: # if var is true
-					r = str_var[2] # feature
-					j = str_var[4] # node
+					_, r, j = str_var.split("_")
 					if not is_node_leaf[j]:
 						node_labels[j] = f'{j} : f{r}'
 			elif str_var[0] == 'c': # c vars
 				dimacs_idx = self.var_map[str_var]
 				if dimacs_idx in model: # if var is true
-					j = str_var[2] # feature
+					_, j = str_var.split("_")
 					if is_node_leaf[j]:
 						node_labels[j] = f'{j} : {"T" if model[dimacs_idx] else "F"}'
 
-
-		
 		for str_var in sorted(self.var_map.keys()):
 			if str_var[0] == 'p':         # p vars
 				v = self.var_map[str_var] # v is index of var in DIMACS
 				if v in model and model[v]:
-					j = str_var[2] # get parent name from var name
-					i = str_var[4] # get child name from var name
-
+					_, j, i = str_var.split("_")
 					print(f'  "{node_labels[i]}" -> "{node_labels[j]}"  [label="T or F?"]')
 		print('}')
 		print('# === end of tree')
@@ -320,6 +327,9 @@ class Enc:
 			# This is how it is in the paper:
 			self.add_sum_eq1([self.l(i,j) for j in self.LR(i)], [self.v(i)])
 			# This is equivalent
+			# self.add_sum_ge1([self.l(i,j) for j in self.LR(i)], [self.v(i)])
+			# self.add_sum_le1([self.l(i,j) for j in self.LR(i)])
+
 			#self.add_sum_ge1([self.l(i,j) for j in self.LR(i)], [self.v(i)])
 
 		# if node i is a parent then it has a child (5)

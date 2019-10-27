@@ -44,7 +44,7 @@ def generate_inputs(min_n_feats, max_n_feats, int_n_feats):
 			th.start()
 			threads.append(th)
 
-			n_done = check_threads(threads, n_done)
+			threads, n_done = check_threads(threads, n_done)
    
 	join_threads(threads, n_done)
 
@@ -101,7 +101,7 @@ def find_optimals():
 		th.start()
 		threads.append(th)
 
-		n_done = check_threads(threads, n_done)
+		threads, n_done = check_threads(threads, n_done)
 			
 	join_threads(threads, n_done)
 
@@ -160,31 +160,27 @@ def check_threads(threads, n_done):
 	Check current state of active threads, and keep
 	number of active threads below num_threads
 	'''
-	if threading.active_count() >= num_threads / 2:
-		print(f'{num_threads//2} threads or more are running. Trying to join some..')
-		for th in threads:
-			if not th.is_alive():
-				th.join()
-				n_done += 1
-				print(f'Joined. {n_done} threads done')
-				threads.remove(th)
-	
-	if threading.active_count() >= num_threads:
+	while threading.active_count() >= num_threads:
 		print(f'{num_threads} threads or more are running. Trying to join one..')
 		th = random.choice(threads)
-		th.join(10 * 60) # 10 minutes
-		n_done += 1
-		print(f'Joined. {n_done} threads done')
-		threads.remove(th)
-	return n_done
+		th.join(60) # 1 minute
+		if not th.is_alive(): # if it was joined
+			n_done += 1
+			print(f'Joined. {n_done} threads done')
+			threads.remove(th)
+	return threads, n_done
 
 def join_threads(threads, n_done):
 	''' join all threads in list threads '''
 	print('All threads are running. Waiting for them..')
 	for th in threads:
-		th.join(10 * 60) # 10 minutes
-		n_done += 1
+		th.join()    # no timeout. Wait forever
+		n_done += 1  # joined for sure
 		print(f'Joined. {n_done} threads done')
+		threads.remove(th)
+
+	# assert len(threads) == 0, f'still has {len(threads)} threads'
+
 
 if __name__ == "__main__":
 	main()

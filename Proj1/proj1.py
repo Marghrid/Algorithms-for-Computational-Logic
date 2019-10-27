@@ -85,12 +85,12 @@ if __name__ == "__main__":
 	lns = str(po, encoding ='utf-8').splitlines()
 	
 	if rc == 10:
-		print("SAT")
-		e.print_solution(get_model(lns))
 		if print_model:
 			e.print_model(get_model(lns))
 		if print_tree:
 			e.print_tree(get_model(lns))
+		print("SAT")
+		e.print_solution(get_model(lns))
 
 	
 	elif rc == 20:
