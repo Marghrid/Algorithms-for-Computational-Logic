@@ -2,15 +2,28 @@
 
 ## Run:
 
-`$ python3 proj1.py < <sample_file> `
+`$ python3 proj1.py < <sample_file>`
 
 Example:
 
-`$ python3 proj1.py < t6_sat/t_10_6_7.smp `
+`$ python3 proj1.py < t6_sat/t_1_6_7.smp`
 
-Check results:
+## Check correctness:
+
+### For 1 sample:
 
 `python proj1.py < t6_sat/t_10_6_7.smp |  python3 chk.py  t6_sat/t_10_6_7.smp`
+
+### For all samples:
+`./chk_all.sh "./proj1.py" t6_sat`
+
+`./chk_all.sh "./proj1.py" t6_unsat`
+
+`./chk_all.sh "./proj1.py" my_instances`
+
+`./chk_all.sh "./proj1.py" my_instances_unsat`
+
+Note the last two commands may take a long time to finish
 
 ## Solvers:
 
