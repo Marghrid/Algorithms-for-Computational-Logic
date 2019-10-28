@@ -8,7 +8,11 @@ from enc import Enc, var, sign
 import argparse
 
 solver_dir = './solvers/'
-solvers = ['cadical', 'cryptominisat5_simple', 'MapleCBTCoreFirst', 'optsat', 'smallsat', 'lingeling', 'mergesat', 'cryptominisat5_simple --sls=walksat', 'cryptominisat5_simple --sls=yalsat']
+solvers = ['glucose -model', 'cadical', 'cryptominisat5_simple',\
+		   'MapleCBTCoreFirst',  'MapleLCMDistChrBt-DL-v3',\
+		   'optsat', 'smallsat', 'lingeling', 'mergesat',\
+		   'cryptominisat5_simple --sls=walksat',\
+		   'cryptominisat5_simple --sls=yalsat']
 solver = solver_dir + solvers[0]
 
 def get_model(lns):
@@ -36,8 +40,6 @@ def parse(f):
 		else:
 			nms = [int(l) for l in s]
 	return (nms, samples)
-
-
 
 if __name__ == "__main__":
 	debug_solver = False
@@ -79,15 +81,15 @@ if __name__ == "__main__":
 	p = subprocess.Popen(solver, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	(po, pe) = p.communicate(input=bytes(cnf, encoding ='utf-8'))
 	
-	if debug_solver:
-		print('\n'.join(lns), file=sys.stderr)
-		print(cnf, file=sys.stderr)
-
 	print("# decoding result from solver")
 	rc = p.returncode
 	lns = str(po, encoding ='utf-8').splitlines()
 	lnse = str(pe, encoding ='utf-8').split()
 	
+	if debug_solver:
+		print('\n'.join(lns), file=sys.stderr)
+		print(cnf, file=sys.stderr)
+
 	if rc == 10:
 		if print_model:
 			e.print_model(get_model(lns))
@@ -96,7 +98,6 @@ if __name__ == "__main__":
 		print("SAT")
 		e.print_solution(get_model(lns))
 
-	
 	elif rc == 20:
 		print("UNSAT")
 	else:
