@@ -131,7 +131,7 @@ class Enc:
 		encodes clauses or_lits V (SUM(sum_lits) = 1).
 		or_lits is optional 
 		"""
-		self.add_sum_le1(sum_lits, or_lits)
+		self.add_sum_le1_sc(sum_lits, or_lits)
 		self.add_sum_ge1(sum_lits, or_lits)
 
 	def add_sum_le1(self, sum_lits, or_lits = []):
@@ -168,12 +168,12 @@ class Enc:
 		n = len(sum_lits) - 1
 
 		self.add_constraint([neg(sum_lits[0]), self.s(0)] + or_lits)
-		self.add_constraint([neg(sum_lits[n]), self.s(n)])
+		self.add_constraint([neg(sum_lits[n]), neg(self.s(n-1))] + or_lits)
 
 		for i in range(1, n):
-			self.add_constraint([neg(sum_lits[i]), self.s(i)])          # s_i is true if x_1 is true
-			self.add_constraint([neg(self.s(i-1)), self.s(i)])          # si is true if s(i-1) is true
-			self.add_constraint([neg(sum_lits[i]), neg(self.s(i-1))])   # x_i can only be set to true is s(i-1) is false
+			self.add_constraint([neg(sum_lits[i]), self.s(i)] + or_lits)          # s_i is true if x_1 is true
+			self.add_constraint([neg(self.s(i-1)), self.s(i)] + or_lits)          # si is true if s(i-1) is true
+			self.add_constraint([neg(sum_lits[i]), neg(self.s(i-1))] + or_lits)   # x_i can only be set to true is s(i-1) is false
 
 	def add_sum_ge1(self, sum_lits, or_lits = []):
 		"""
@@ -328,7 +328,7 @@ class Enc:
 			self.add_sum_eq1([self.l(i,j) for j in self.LR(i)], [self.v(i)])
 			# This is equivalent
 			# self.add_sum_ge1([self.l(i,j) for j in self.LR(i)], [self.v(i)])
-			# self.add_sum_le1([self.l(i,j) for j in self.LR(i)])
+			# self.add_sum_le1_sc([self.l(i,j) for j in self.LR(i)])
 
 			#self.add_sum_ge1([self.l(i,j) for j in self.LR(i)], [self.v(i)])
 
