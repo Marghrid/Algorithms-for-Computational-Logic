@@ -8,6 +8,15 @@ Example:
 
 `$ python3 proj1.py < t6_sat/t_1_6_7.smp`
 
+## About
+
+This goal of this project is to build a tool that constructs a binary decision tree that correctly classifies a set of inputs by encoding the problem into SAT. The encoding used is the one described in the paper [Learning Optimal Decision Trees with SAT](https://www.ijcai.org/proceedings/2018/189) by Narodytska et al. in IJCAI'18. Several variations of this encoding (that did not compromise the correctness of the resulting tree) were tested:
+
+- Try sequential encoding instead of pairwise encoding for cardinality constraints
+- In constraint 4, remove the implication in the "<=1" part of the constraint
+- Remove all u variables and respective constraints
+
+
 ## Check correctness:
 
 ### For 1 sample:
