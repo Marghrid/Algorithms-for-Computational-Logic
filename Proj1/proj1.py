@@ -9,11 +9,10 @@ import argparse
 
 solver_dir = './solvers/'
 solvers = ['glucose -model', 'cadical', 'cryptominisat5_simple',\
-		   'MapleCBTCoreFirst',  'MapleLCMDistChrBt-DL-v3',\
 		   'optsat', 'smallsat', 'lingeling', 'mergesat',\
 		   'cryptominisat5_simple --sls=walksat',\
 		   'cryptominisat5_simple --sls=yalsat']
-solver = solver_dir + solvers[0]
+solver = solver_dir + solvers[1]
 
 def get_model(lns):
 	vals=dict()
@@ -89,6 +88,7 @@ if __name__ == "__main__":
 	if debug_solver:
 		print('\n'.join(lns), file=sys.stderr)
 		print(cnf, file=sys.stderr)
+		print(lns)
 
 	if rc == 10:
 		if print_model:
