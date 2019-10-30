@@ -246,8 +246,9 @@ class Enc:
 		''' prints the decision tree '''
 		print('# === tree')
 		print('digraph T {')
-		node_labels = {}
 		is_node_leaf = {}
+
+		# fill is_node_leaf
 		for str_var in sorted(self.var_map.keys()):
 			if str_var[0] == 'v':  # v vars
 				dimacs_idx = self.var_map[str_var]
@@ -261,20 +262,25 @@ class Enc:
 				if dimacs_idx in model and model[dimacs_idx]: # if var is true
 					_, r, j = str_var.split("_")
 					if not is_node_leaf[j]:
-						node_labels[j] = f'{j} : f{r}'
+						print(f'{j} [label="{j} : f{r}"]')
 			elif str_var[0] == 'c': # c vars
 				dimacs_idx = self.var_map[str_var]
-				if dimacs_idx in model: # if var is true
+				if dimacs_idx in model:
 					_, j = str_var.split("_")
 					if is_node_leaf[j]:
-						node_labels[j] = f'{j} : {"T" if model[dimacs_idx] else "F"}'
+						label = f'{j} : {"1" if model[dimacs_idx] else "0"}'
+						print(f'{j} [label="{label}", style=filled, color="#DFDFDF"]')
 
 		for str_var in sorted(self.var_map.keys()):
-			if str_var[0] == 'p':         # p vars
-				v = self.var_map[str_var] # v is index of var in DIMACS
-				if v in model and model[v]:
-					_, j, i = str_var.split("_")
-					print(f'  "{node_labels[i]}" -> "{node_labels[j]}"  [label="T or F?"]')
+			if str_var[0] in ['r', 'l']:
+				dimacs_idx = self.var_map[str_var]
+				if dimacs_idx in model and model[dimacs_idx]:
+					var_name, i, j = str_var.split("_")
+					if var_name == 'r':
+						print(f'{i} -> {j}  [label="1", color="blue"]')
+					else:
+						print(f'{i} -> {j}  [label="0", color="red"]')
+
 		print('}')
 		print('# === end of tree')
 
