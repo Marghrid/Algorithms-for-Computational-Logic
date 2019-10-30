@@ -131,7 +131,7 @@ class Enc:
 		encodes clauses or_lits V (SUM(sum_lits) = 1).
 		or_lits is optional 
 		"""
-		self.add_sum_le1_sc(sum_lits, or_lits)
+		self.add_sum_le1(sum_lits, or_lits)
 		self.add_sum_ge1(sum_lits, or_lits)
 
 	def add_sum_le1(self, sum_lits, or_lits = []):
@@ -152,8 +152,8 @@ class Enc:
 
 	def add_sum_le1_sc(self, sum_lits, or_lits = []):
 		"""
-		encodes clauses or_lits V (SUM(sum_lits) <= 1).
-		or_lits is optional.
+		encodes clauses or_lits V (SUM(sum_lits) <= 1). or_lits is optional.
+		Testing concluded that pairwise encoding was more efficient.
 		"""
 		# Using Sinz 2005 as reference:
 		# idx 0 of list sum_lits corresponds to s_0 (starts in 0)
@@ -246,6 +246,7 @@ class Enc:
 		''' prints the decision tree '''
 		print('# === tree')
 		print('digraph T {')
+		print('edge [penwidth=2]')
 		is_node_leaf = {}
 
 		# fill is_node_leaf
@@ -334,7 +335,7 @@ class Enc:
 			self.add_sum_eq1([self.l(i,j) for j in self.LR(i)], [self.v(i)])
 			# This is equivalent
 			# self.add_sum_ge1([self.l(i,j) for j in self.LR(i)], [self.v(i)])
-			# self.add_sum_le1_sc([self.l(i,j) for j in self.LR(i)])
+			# self.add_sum_le1([self.l(i,j) for j in self.LR(i)])
 
 			#self.add_sum_ge1([self.l(i,j) for j in self.LR(i)], [self.v(i)])
 
