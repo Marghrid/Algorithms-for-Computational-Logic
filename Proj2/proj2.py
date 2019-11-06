@@ -6,18 +6,35 @@
 import sys,subprocess 
 from enc import Enc
 import argparse
+import re
 
 solver_dir = './solvers/'
 solvers = ['z3 -in']
 solver = solver_dir + solvers[0]
 
 def get_model(lns):
-	pass
+	vals = dict()
+	for i, ln in enumerate(lns):
+		ln = ln.rstrip()
+		if not ln: continue
+
+		var_match = re.search(r'\(define-fun (\w+) \(\) (\w+)', ln)
+		if not var_match or not i+1 < len(lns)-1: continue
+		
+		var = var_match.groups()[0]
+		
+		val_match = re.search(r'(\w+)', lns[i+1])
+		if not val_match: continue
+
+		val = val_match.groups()[0]
+
+		vals[var] = val
+
+	return vals
 	# vals=dict()
 	# found=False
 	# for l in lns:
-	# 	l=l.rstrip()
-	# 	if not l: continue
+	# 	
 	# 	if not l.startswith('v ') and not l.startswith('V '): continue
 	# 	found=True
 	# 	vs = l.split()[1:]
@@ -73,7 +90,6 @@ if __name__ == "__main__":
 
 	print("# sending to solver '" + str(solver) + "'")
 	cnf = e.mk_smt_lib(False)
-	print (cnf)
 	if time:
 		solver = 'time -f "%E" ' + solver
 	p = subprocess.Popen(solver, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -87,20 +103,23 @@ if __name__ == "__main__":
 	if debug_solver:
 		print('\n'.join(lns), file=sys.stderr)
 		print(cnf, file=sys.stderr)
-	print(lns)
-	
-	# if rc == 10:
-	# 	if print_model:
-	# 		e.print_model(get_model(lns))
-	# 	if print_tree:
-	# 		e.print_tree(get_model(lns))
-	# 	print("SAT")
-	# 	e.print_solution(get_model(lns))
+		print(lns)
 
-	# elif rc == 20:
-	# 	print("UNSAT")
-	# else:
-	# 	print("ERROR: something went wrong with the solver")
+	if(lns[0] == 'sat'):
+		if print_model:
+			e.print_model(get_model(lns))
+		if print_tree:
+			e.print_tree(get_model(lns))
+		print("SAT")
+		#e.print_solution(get_model(lns))
+		e.print_model(get_model(lns))
+
+	elif(lns[0] == 'unsat'):
+		print("UNSAT")
+
+	else:
+		print("ERROR: something went wrong with the solver")
+		print(lns)
 
 	if time:
 		print('real (wall clock) time:', lnse[-1])

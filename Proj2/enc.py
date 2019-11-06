@@ -173,12 +173,8 @@ class Enc:
 	def print_model(self,model):
 		'''prints SAT model'''
 		print('# === model')
-		for str_var in sorted(self.var_map.keys()):
-			v = self.var_map[str_var]
-			val = '?'
-			if v in model and model[v]: val='T'
-			if v in model and not model[v]: val='F'
-			print('# {}={} ({})'.format(str_var,val,v))
+		for var in sorted(model):
+			print(f'# {var} = {model[var]}')
 		print('# === end of model')
 
 	def print_tree(self, model):
@@ -246,7 +242,7 @@ class Enc:
 			self.add_decl_int(self.p(i))
 
 		# Declare variable domains:
-		for i in range(2, self.node_count+1):
+		for i in range(1, self.node_count+1):
 			self.add_assert(self.mk_le(self.l(i), self.node_count)) # l_i <= N
 			self.add_assert(self.mk_le(self.r(i), self.node_count)) # r_i <= N
 			self.add_assert(self.mk_le(self.p(i), self.node_count)) # p_i <= N
@@ -256,15 +252,15 @@ class Enc:
 			self.add_assert(self.mk_ge(self.p(i), 0))               # p_i <= 0
 
 			# from here onwards: can I remove?
-			# l(i) in LR(i)
+			## l(i) in LR(i)
 			self.add_assert(self.mk_eq(self.mk_mod(self.l(i), 2), 0))            # l_i%2 == 0
-			self.add_assert(self.mk_impl(self.v(i), self.mk_ge(self.l(i), i+1))) # not v(i) -> l_i >= i+1
-			self.add_assert(self.mk_le(self.l(i), min(2*i, self.node_count-1)))  # not v(i) -> l_i <= min(2*i, N-1))
-
-			# r(i) in RR(i)
-			self.add_assert(self.mk_eq(self.mk_mod(self.r(i), 2), 1))            # l_i%2 == 1
-			self.add_assert(self.mk_impl(self.v(i), self.mk_ge(self.r(i), i+2))) # not v(i) -> l_i >= i+2
-			self.add_assert(self.mk_le(self.r(i), min(2*i+1, self.node_count)))  # not v(i) -> l_i <= min(2*i+1, N))
+			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_ge(self.l(i), i+1))) # not v(i) -> l_i >= i+1
+			self.add_assert(self.mk_le(self.l(i), min(2*i, self.node_count-1)))  # l_i <= min(2*i, N-1))
+#
+			## r(i) in RR(i)
+			self.add_assert(self.mk_eq(self.mk_mod(self.r(i), 2), 1))            # r_i%2 == 1
+			#self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_ge(self.r(i), i+2))) # not v(i) -> r_i >= i+2
+			self.add_assert(self.mk_le(self.r(i), min(2*i+1, self.node_count)))  # r_i <= min(2*i+1, N))
 
 		## Encoding Topology
 		# root node is not a leaf (1)
