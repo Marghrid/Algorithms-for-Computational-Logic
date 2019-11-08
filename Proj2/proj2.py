@@ -9,6 +9,7 @@ import argparse
 import re
 
 solver_dir = './solvers/'
+#solver_dir = ''
 solvers = ['z3 -in']
 solver = solver_dir + solvers[0]
 
@@ -61,18 +62,18 @@ if __name__ == "__main__":
 	argparser = argparse.ArgumentParser()
 	argparser.add_argument('-t', '--print_tree', action='store_true', help='print decision tree')
 	argparser.add_argument('-m', '--print_model', action='store_true', help='print model')
-	argparser.add_argument('-c', '--print_constraints', action='store_true', help='print all encoded constraints')
+	argparser.add_argument('-s', '--print_smt', action='store_true', help='print smt-lib encoded constraints')
 	argparser.add_argument('-v', '--verbose', action='store_true', help='print everything')
 	argparser.add_argument( '--time', action='store_true', help='time solver')
 	cmd_args = argparser.parse_args()
 
 	time = cmd_args.time
 	print_tree = cmd_args.print_tree
-	print_constraints = cmd_args.print_constraints
+	print_smt = cmd_args.print_smt
 	print_model = cmd_args.print_model
 	if cmd_args.verbose:
 		print_tree = True
-		print_constraints = True
+		print_smt = True
 		print_model = True
 
 
@@ -83,13 +84,14 @@ if __name__ == "__main__":
 	e = Enc(nms[0], nms[1])
 	e.enc(samples)
 
-	# if print_constraints:
-	# 	print("# encoded constraints")
-	# 	print("# " + "\n# ".join(map(str, e.constraints)))
-	# 	print("# END encoded constraints")
+	cnf = e.mk_smt_lib(False)
+
+	if print_smt:
+	 	print("# encoded constraints")
+	 	print(cnf)
+	 	print("# END encoded constraints")
 
 	print("# sending to solver '" + str(solver) + "'")
-	cnf = e.mk_smt_lib(False)
 	if time:
 		solver = 'time -f "%E" ' + solver
 	p = subprocess.Popen(solver, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -111,8 +113,8 @@ if __name__ == "__main__":
 		if print_tree:
 			e.print_tree(get_model(lns))
 		print("SAT")
-		#e.print_solution(get_model(lns))
-		e.print_model(get_model(lns))
+		# e.print_model(get_model(lns))
+		e.print_solution(get_model(lns))
 
 	elif(lns[0] == 'unsat'):
 		print("UNSAT")

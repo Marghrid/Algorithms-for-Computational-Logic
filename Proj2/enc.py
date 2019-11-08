@@ -100,6 +100,11 @@ class Enc:
 		assert(right is not None)
 		return f'(>= {left} {right})'
 
+	def mk_gt(self, left, right):
+		assert(left is not None)
+		assert(right is not None)
+		return f'(> {left} {right})'
+
 	def mk_eq(self, left, right):
 		assert(left is not None)
 		assert(right is not None)
@@ -122,6 +127,11 @@ class Enc:
 		assert(arg is not None)
 		return f'(not {arg})'
 
+	def mk_or(self, left, right):
+		assert(left is not None)
+		assert(right is not None)
+		return f'(or {left} {right})'
+
 	def mk_impl(self, left, right):
 		assert(left is not None)
 		assert(right is not None)
@@ -140,35 +150,19 @@ class Enc:
 		- 'c i v' leaf i responds with the class v
 		- 'a r i' the feature r is assigned to internal node i
 		'''
+		print(f'l {1} {model[self.l(1)]}')
+		print(f'r {1} {model[self.r(1)]}')
+		print(f'a ?? {1}')
 
-		# I need to know v(i) so the values of vars are printed only for relevant nodes:
-		#  l, r, and a are only for internal nodes i s.t. v(i) = False
-		#  c is only for leaf nodes i s.t. v(i) = True
+		for i in range(2, self.node_count+1):
+			is_leaf = model[self.v(i)]
+			if not is_leaf:
+				print(f'l {i} {model[self.l(i)]}')
+				print(f'r {i} {model[self.r(i)]}')
+				print(f'a ?? ??')
 
-		for str_var in sorted(self.var_map.keys()):
-			if str_var[0] in ['l', 'r']: # l and r are treated the same
-				dimacs_idx = self.var_map[str_var] # get dimacs idx
-				if dimacs_idx in model and model[dimacs_idx]: # if var is true
-					var_name, i, j = str_var.split("_")
-					v_dimax_idx = self.var_map[self.v(int(i))]
-					if v_dimax_idx in model and not model[v_dimax_idx]: # i is an internal node
-						print(f'{var_name} {i} {j}')
-
-			elif str_var[0] == 'a': # a vars
-				dimacs_idx = self.var_map[str_var] # get dimacs idx
-				if dimacs_idx in model and model[dimacs_idx]: # if var is true
-					_, r, i = str_var.split("_")
-					v_dimax_idx = self.var_map[self.v(int(i))]
-					if v_dimax_idx in model and not model[v_dimax_idx]: # i is an internal node
-						print(f'a {r} {i}')
-
-			elif str_var[0] == 'c': # c vars have only one arg
-				dimacs_idx = self.var_map[str_var] # get dimacs idx
-				if dimacs_idx in model: # if var is true
-					_, j = str_var.split("_")
-					v_dimax_idx = self.var_map[self.v(int(j))]
-					if v_dimax_idx in model and model[v_dimax_idx]: # j is a leaf node
-						print(f'c {j} {"1" if model[dimacs_idx] else "0"}')
+			else:
+				print(f'c {i} ??')
 
 	def print_model(self,model):
 		'''prints SAT model'''
@@ -258,8 +252,8 @@ class Enc:
 			self.add_assert(self.mk_le(self.l(i), min(2*i, self.node_count-1)))  # l_i <= min(2*i, N-1))
 #
 			## r(i) in RR(i)
-			self.add_assert(self.mk_eq(self.mk_mod(self.r(i), 2), 1))            # r_i%2 == 1
-			#self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_ge(self.r(i), i+2))) # not v(i) -> r_i >= i+2
+			self.add_assert(self.mk_or(self.mk_eq(self.r(i), 0), self.mk_eq(self.mk_mod(self.r(i), 2), 1)))            # (r_i == 0) V (r_i%2 == 1)
+			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_ge(self.r(i), i+2))) # not v(i) -> r_i >= i+2
 			self.add_assert(self.mk_le(self.r(i), min(2*i+1, self.node_count)))  # r_i <= min(2*i+1, N))
 
 		## Encoding Topology
@@ -277,7 +271,10 @@ class Enc:
 				l_plus_1 = self.mk_sum(self.l(i), 1)
 				self.add_assert(self.mk_eq(self.r(i), l_plus_1))  # r_i = l_i + 1
 		
-		# non-leaf node must have a child (4) is implicit in domain!! :D
+		# non-leaf node must have a child (4)
+		for i in range(1, self.node_count+1):
+			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_gt(self.l(i), 0))) # not v_i -> l_i > 0 (non-leaves must have children)
+			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_gt(self.r(i), 0))) # not v_i -> r_i > 0 (non-leaves must have children)
 		
 		# if node i is a parent then it has a child (5)
 		for i in range(1, self.node_count+1):
