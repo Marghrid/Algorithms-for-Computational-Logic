@@ -88,6 +88,14 @@ class Enc:
 	def add_decl_int(self, name):
 		assert(name is not None)
 		self.constraints.append(f'(declare-const {name} Int)')
+		
+	def add_iff(self, b1, b2):
+		'''add iff constraint between b1 and b2'''
+		# TODO: Check that they are bool?
+		assert(b1 is not None)
+		assert(b2 is not None)
+		self.add_assert(self.mk_impl(b1, b2))
+		self.add_assert(self.mk_impl(b2, b1))
 
 	# Integer comparison operations
 	def mk_le(self, left, right):
@@ -190,10 +198,12 @@ class Enc:
 		for i in range(1, self.node_count+1):
 			l_ch = int(model[self.l(i)])
 			r_ch = int(model[self.r(i)])
-			if l_ch > 0:
-				print(f'{i} -> {l_ch}  [label="1", color="blue"]')
-			if r_ch > 0:
-				print(f'{i} -> {r_ch}  [label="0", color="red"]')
+			is_leaf = model[self.v(i)]
+
+			if is_leaf == 'true': continue
+			
+			print(f'{i} -> {l_ch}  [label="1", color="blue"]')
+			print(f'{i} -> {r_ch}  [label="0", color="red"]')
 
 		print('}')
 		print('# === end of tree')
@@ -221,24 +231,19 @@ class Enc:
 
 		# Declare variable domains:
 		for i in range(1, self.node_count+1):
-			self.add_assert(self.mk_le(self.l(i), self.node_count)) # l_i <= N
-			self.add_assert(self.mk_le(self.r(i), self.node_count)) # r_i <= N
-			self.add_assert(self.mk_le(self.p(i), self.node_count)) # p_i <= N
+			# p_j = i
+			self.add_assert(self.mk_ge(self.p(i), i//2))               			# p_j >= j//2
+			self.add_assert(self.mk_le(self.p(i), i-1)) 						# p_j <= j-1
+			
+			# l(i) in LR(i)
+			self.add_assert(self.mk_eq(self.mk_mod(self.l(i), 2), 0))       	# l_i%2 == 0
+			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_ge(self.l(i), i+1))) 	# not v(i) -> l_i >= i+1
+			self.add_assert(self.mk_le(self.l(i), min(2*i, self.node_count-1))) # l_i <= min(2*i, N-1))
 
-			self.add_assert(self.mk_ge(self.l(i), 0))               # l_i <= 0
-			self.add_assert(self.mk_ge(self.r(i), 0))               # r_i <= 0
-			self.add_assert(self.mk_ge(self.p(i), 0))               # p_i <= 0
-
-			# from here onwards: can I remove?
-			## l(i) in LR(i)
-			self.add_assert(self.mk_eq(self.mk_mod(self.l(i), 2), 0))            # l_i%2 == 0
-			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_ge(self.l(i), i+1))) # not v(i) -> l_i >= i+1
-			self.add_assert(self.mk_le(self.l(i), min(2*i, self.node_count-1)))  # l_i <= min(2*i, N-1))
-#
-			## r(i) in RR(i)
-			self.add_assert(self.mk_or(self.mk_eq(self.r(i), 0), self.mk_eq(self.mk_mod(self.r(i), 2), 1)))            # (r_i == 0) V (r_i%2 == 1)
-			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_ge(self.r(i), i+2))) # not v(i) -> r_i >= i+2
-			self.add_assert(self.mk_le(self.r(i), min(2*i+1, self.node_count)))  # r_i <= min(2*i+1, N))
+			# r(i) in RR(i)
+			self.add_assert(self.mk_eq(self.mk_mod(self.r(i), 2), 1))           # r_i%2 == 1
+			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_ge(self.r(i), i+2))) 	# not v(i) -> r_i >= i+2
+			self.add_assert(self.mk_le(self.r(i), min(2*i+1, self.node_count))) # r_i <= min(2*i+1, N))
 
 		## Encoding Topology
 		# root node is not a leaf (1)
@@ -246,30 +251,31 @@ class Enc:
 
 		# if i is a leaf then i has no children (2)
 		for i in range(1, self.node_count+1):
-			self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.l(i), 0))); # v_i -> l_i = 0
-			self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.r(i), 0))); # v_i -> r_i = 0
+			self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.l(i), 0))) # v_i -> l_i = 0
+			# self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.r(i), (- 1)))) # v_i -> r_i = 0
 		
 		# the left child and the right child of node i are numbered consecutively (3)
 		for i in range(1, self.node_count+1):
 			for j in self.LR(i):
 				l_plus_1 = self.mk_sum(self.l(i), 1)
-				self.add_assert(self.mk_eq(self.r(i), l_plus_1))  # r_i = l_i + 1
+				self.add_assert(self.mk_or(self.mk_eq(self.r(i), l_plus_1), self.mk_eq(self.l(i), 0)))  # r_i = l_i + 1
 		
+		# Question: Is this not inside the domain? l_i > min if not leaf 
 		# non-leaf node must have a child (4)
-		for i in range(1, self.node_count+1):
-			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_gt(self.l(i), 0))) # not v_i -> l_i > 0 (non-leaves must have children)
-			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_gt(self.r(i), 0))) # not v_i -> r_i > 0 (non-leaves must have children)
-		
+		# for i in range(1, self.node_count+1):
+			# self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_gt(self.l(i), 0))) # not v_i -> l_i > 0 (non-leaves must have children)
+			# self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_gt(self.r(i), 0))) # not v_i -> r_i > 0 (non-leaves must have children)
+
 		# if node i is a parent then it has a child (5)
 		for i in range(1, self.node_count+1):
 			for j in self.LR(i):
 				p_j_eq_i = self.mk_eq(self.p(j), i)
 				l_i_eq_j = self.mk_eq(self.l(i), j)
-				self.add_assert(self.mk_iff(p_j_eq_i, l_i_eq_j)) # p_j = i <-> l_i = j
+				self.add_iff(p_j_eq_i, l_i_eq_j) 					# p_j = i <-> l_i = j
 			for j in self.RR(i):
 				p_j_eq_i = self.mk_eq(self.p(j), i)
 				r_i_eq_j = self.mk_eq(self.r(i), j)
-				self.add_assert(self.mk_iff(p_j_eq_i, r_i_eq_j)) # p_j = i <-> r_i = j
+				self.add_iff(p_j_eq_i, r_i_eq_j) 					# p_j = i <-> r_i = j
 
 		# all nodes but node 1 have a parent (6).
 		# Just need to say that 1 does not have a parent, the rest is implicit in domain.
