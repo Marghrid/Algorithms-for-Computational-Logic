@@ -156,7 +156,7 @@ class Enc:
 
 		for i in range(2, self.node_count+1):
 			is_leaf = model[self.v(i)]
-			if not is_leaf:
+			if is_leaf == 'false':
 				print(f'l {i} {model[self.l(i)]}')
 				print(f'r {i} {model[self.r(i)]}')
 				print(f'a ?? ??')
@@ -176,40 +176,24 @@ class Enc:
 		print('# === tree')
 		print('digraph T {')
 		print('edge [penwidth=2]')
-		is_node_leaf = {}
 
-		# fill is_node_leaf
-		for str_var in sorted(self.var_map.keys()):
-			if str_var[0] == 'v':  # v vars
-				dimacs_idx = self.var_map[str_var]
-				if dimacs_idx in model: # if var is true
-					_, i = str_var.split("_")
-					is_node_leaf[i] = model[dimacs_idx]
+		# print nodes
+		for i in range(1, self.node_count+1):
+			is_leaf = model[self.v(i)]
+			if is_leaf == 'false':
+				print(f'{i} [label="{i} : f??"]')
+			else:
+				label = f'{i} : ??'
+				print(f'{i} [label="{label}", style=filled, color="#DFDFDF"]')
 
-		for str_var in sorted(self.var_map.keys()):
-			if str_var[0] == 'a': # a vars
-				dimacs_idx = self.var_map[str_var]
-				if dimacs_idx in model and model[dimacs_idx]: # if var is true
-					_, r, j = str_var.split("_")
-					if not is_node_leaf[j]:
-						print(f'{j} [label="{j} : f{r}"]')
-			elif str_var[0] == 'c': # c vars
-				dimacs_idx = self.var_map[str_var]
-				if dimacs_idx in model:
-					_, j = str_var.split("_")
-					if is_node_leaf[j]:
-						label = f'{j} : {"1" if model[dimacs_idx] else "0"}'
-						print(f'{j} [label="{label}", style=filled, color="#DFDFDF"]')
-
-		for str_var in sorted(self.var_map.keys()):
-			if str_var[0] in ['r', 'l']:
-				dimacs_idx = self.var_map[str_var]
-				if dimacs_idx in model and model[dimacs_idx]:
-					var_name, i, j = str_var.split("_")
-					if var_name == 'r':
-						print(f'{i} -> {j}  [label="1", color="blue"]')
-					else:
-						print(f'{i} -> {j}  [label="0", color="red"]')
+		# print edges
+		for i in range(1, self.node_count+1):
+			l_ch = int(model[self.l(i)])
+			r_ch = int(model[self.r(i)])
+			if l_ch > 0:
+				print(f'{i} -> {l_ch}  [label="1", color="blue"]')
+			if r_ch > 0:
+				print(f'{i} -> {r_ch}  [label="0", color="red"]')
 
 		print('}')
 		print('# === end of tree')
