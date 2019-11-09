@@ -93,8 +93,7 @@ class Enc:
 		# TODO: Check that they are bool?
 		assert(b1 is not None)
 		assert(b2 is not None)
-		self.add_assert(self.mk_impl(b1, b2))
-		self.add_assert(self.mk_impl(b2, b1))
+		self.add_assert(self.mk_iff(b1, b2))
 
 	def add_comment(self, comment):
 		self.constraints.append('; ' + comment)
@@ -223,9 +222,9 @@ class Enc:
 		for i in range(1, self.node_count+1):
 			l_ch = int(model[self.l(i)])
 			r_ch = int(model[self.r(i)])
-			if l_ch > 0:
+			is_leaf = model[self.v(i)]
+			if is_leaf == 'false':
 				print(f'{i} -> {l_ch}  [label="1", color="blue"]')
-			if r_ch > 0:
 				print(f'{i} -> {r_ch}  [label="0", color="red"]')
 
 		print('}')
@@ -280,8 +279,7 @@ class Enc:
 		self.add_comment('if i is a leaf then i has no children (2)')
 		for i in range(1, self.node_count+1):
 			self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.l(i), 0))); # v_i -> l_i = 0
-			self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.r(i), 0))); # v_i -> r_i = 0
-			# TODO: -1? Amândio 
+			# self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.r(i), 0))); # v_i -> r_i = 0
 		
 		# the left child and the right child of node i are numbered consecutively or they are bothe zero(3)
 		self.add_comment('the left child and the right child of node i are numbered consecutively or they are both zero (3)')
