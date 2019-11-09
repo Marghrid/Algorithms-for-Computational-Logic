@@ -51,11 +51,11 @@ class Enc:
 		assert j >= 1 and j <= self.node_count
 		return f'a_{j}'
 
-	# # 1 iff feature r is being discriminated against by node j, r = 1,...,K, j = 1,...,N,
-	# def u(self, r, j):
-	# 	assert r >= 1 and r <= self.feat_count
-	# 	assert j >= 1 and j <= self.node_count
-	# 	return f'u_{r}_{j}'
+	# Bool. True iff feature r is being discriminated against by node j, r = 1,...,K, j = 1,...,N,
+	def u(self, r, j):
+		assert r >= 1 and r <= self.feat_count
+		assert j >= 1 and j <= self.node_count
+		return f'u_{r}_{j}'
 
 	# Bool. True iff feature r is discriminated for value 0 by node j,
 	#  or by one of its ancestors, r = 1,...,K, j = 1,...,N,
@@ -258,6 +258,7 @@ class Enc:
 			self.add_decl_int(self.a(i))
 
 			for r in range(1, self.feat_count+1):
+				self.add_decl_bool(self.u(r, i))
 				self.add_decl_bool(self.d0(r, i))
 				self.add_decl_bool(self.d1(r, i))
 
@@ -366,20 +367,21 @@ class Enc:
 				self.add_assert(self.mk_iff(self.d1(r, j), or_clause))
 
 		# Using a feature r at node j (9)
-		# for r in range(1, self.feat_count):
-		# 	for j in range(2, self.node_count+1):
-		# 		for i in range(j//2, j): # big AND
-		# 			#self.add_constraint([self.u(r, i)])
-		# 			#self.add_impl(self.p(j, i), neg(self.a(r, j)))
-		# 			self.add_constraint([neg(self.u(r, i)), neg(self.p(j, i)), neg(self.a(r, j))])
+		for r in range(1, self.feat_count):
+			for j in range(2, self.node_count+1):
+				for i in range(j//2, j): # big AND
+					u_and_p = self.mk_and(self.u(r, i), self.mk_eq(self.p(j), i))
+					not_a_r = self.mk_not(self.mk_eq(self.a(j), r))
+					self.add_assert(self.mk_impl(u_and_p, not_a_r))
 				
-		# 		big_OR = []
-		# 		for i in range(j//2, j): # big OR
-		# 			aux = self.mk_and(self.u(r, i), self.p(j, i))
-		# 			big_OR.append(aux)
-		# 		big_OR.append(self.u(r, j))
+				big_OR = []
+				for i in range(j//2, j): # big OR
+					u_r_i_and_p_j_i = self.mk_and(self.u(r, i), self.mk_eq(self.p(j), i))
+					big_OR.append(u_r_i_and_p_j_i)
+				big_OR.append(self.mk_eq(self.a(j), i))
 
-		# 		self.add_lit_iff_clause(self.u(r, j), big_OR)
+				or_clause = self.mk_or_list(big_OR)
+				self.add_assert(self.mk_iff(self.u(r, j), or_clause))
 
 		# For a non-leaf node j, one feature is used (10)
 		self.add_comment('For a non-leaf node j, one feature is used (10)')
