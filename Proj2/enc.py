@@ -188,19 +188,15 @@ class Enc:
 		- 'c i v' leaf i responds with the class v
 		- 'a r i' the feature r is assigned to internal node i
 		'''
-		print(f'l {1} {model[self.l(1)]}')
-		print(f'r {1} {model[self.r(1)]}')
-		print(f'a ?? {1}')
 
-		for i in range(2, self.node_count+1):
+		for i in range(1, self.node_count+1):
 			is_leaf = model[self.v(i)]
 			if is_leaf == 'false':
 				print(f'l {i} {model[self.l(i)]}')
 				print(f'r {i} {model[self.r(i)]}')
-				print(f'a ?? ??')
-
+				print(f'a {i} {model[self.a(i)]}')
 			else:
-				print(f'c {i} ??')
+				print(f'c {i} {model[self.c(i)]}')
 
 	def print_model(self,model):
 		'''prints SAT model'''
