@@ -7,6 +7,7 @@ import sys,subprocess
 from enc import Enc
 import argparse
 import re
+import searches
 
 solver_dir = './solvers/'
 # solver_dir = ''
@@ -65,49 +66,58 @@ if __name__ == "__main__":
 
 	print("# reading from stdin")
 	nms, samples = parse(sys.stdin)
+	search = searches.UNSAT_SAT(nms[0], samples)
+	num_nodes = search.get_first_n()
+	while True:
+		print("# encoding")
+		e = Enc(nms[0], num_nodes)
+		e.enc(samples)
 
-	print("# encoding")
-	e = Enc(nms[0], nms[1])
-	e.enc(samples)
+		cnf = e.mk_smt_lib(False)
 
-	cnf = e.mk_smt_lib(False)
+		if print_smt:
+		 	print("# encoded constraints")
+		 	print(cnf)
+		 	print("# END encoded constraints")
 
-	if print_smt:
-	 	print("# encoded constraints")
-	 	print(cnf)
-	 	print("# END encoded constraints")
+		print("# sending to solver '" + str(solver) + "'")
+		if time:
+			solver = 'time -f "%E" ' + solver
+		p = subprocess.Popen(solver, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+		(po, pe) = p.communicate(input=bytes(cnf, encoding ='utf-8'))
+		
+		print("# decoding result from solver")
+		rc = p.returncode
+		lns = str(po, encoding ='utf-8').splitlines()
+		lnse = str(pe, encoding ='utf-8').split()
+		
+		if debug_solver:
+			print('\n'.join(lns), file=sys.stderr)
+			print(cnf, file=sys.stderr)
+			print(lns)
 
-	print("# sending to solver '" + str(solver) + "'")
-	if time:
-		solver = 'time -f "%E" ' + solver
-	p = subprocess.Popen(solver, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	(po, pe) = p.communicate(input=bytes(cnf, encoding ='utf-8'))
-	
-	print("# decoding result from solver")
-	rc = p.returncode
-	lns = str(po, encoding ='utf-8').splitlines()
-	lnse = str(pe, encoding ='utf-8').split()
-	
-	if debug_solver:
-		print('\n'.join(lns), file=sys.stderr)
-		print(cnf, file=sys.stderr)
-		print(lns)
+		if lns[0] not in ['unsat', 'sat']:
+			print("ERROR: something went wrong with the solver")
+			print(lns)
+			exit(1)
 
-	if(lns[0] == 'sat'):
+		if search.is_done(lns[0], get_model(lns), num_nodes):
+			break
+		else:
+			num_nodes = search.get_next_n(num_nodes)
+
+
+	if search.is_sat():
+		model, cost = search.get_best_model()
 		if print_model:
-			e.print_model(get_model(lns))
+			e.print_model(model)
 		if print_tree:
-			e.print_tree(get_model(lns))
-		print("SAT")
-		# e.print_model(get_model(lns))
-		e.print_solution(get_model(lns))
-
-	elif(lns[0] == 'unsat'):
-		print("UNSAT")
+			e.print_tree(model)
+		e.print_solution(model)
+		print("SAT; Optimal number of nodes: " + str(cost))
 
 	else:
-		print("ERROR: something went wrong with the solver")
-		print(lns)
+		print(f"UNSAT with {search.UB} nodes")
+		
+	
 
-	if time:
-		print('real (wall clock) time:', lnse[-1])
