@@ -9,7 +9,7 @@ import argparse
 import re
 
 solver_dir = './solvers/'
-#solver_dir = ''
+# solver_dir = ''
 solvers = ['z3 -in']
 solver = solver_dir + solvers[0]
 
@@ -21,28 +21,14 @@ def get_model(lns):
 
 		var_match = re.search(r'\(define-fun (\w+) \(\) (\w+)', ln)
 		if not var_match or not i+1 < len(lns)-1: continue
-		
 		var = var_match.groups()[0]
 		
 		val_match = re.search(r'(\w+)', lns[i+1])
 		if not val_match: continue
-
 		val = val_match.groups()[0]
 
 		vals[var] = val
-
 	return vals
-	# vals=dict()
-	# found=False
-	# for l in lns:
-	# 	
-	# 	if not l.startswith('v ') and not l.startswith('V '): continue
-	# 	found=True
-	# 	vs = l.split()[1:]
-	# 	for v in vs:
-	# 		if v == '0': break
-	# 		vals[int(var(v))] = not sign(v)
-	# return vals if found else None
 
 def parse(f):
 	nms = None

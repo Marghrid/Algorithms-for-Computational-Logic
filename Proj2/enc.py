@@ -11,7 +11,6 @@ class Enc:
 			first = i+1
 		else:
 			first = i+2
-
 		return range(first, min(2*i, self.node_count-1)+1, 2)
 
 	def RR(self,i):
@@ -19,7 +18,6 @@ class Enc:
 			first = i+2
 		else:
 			first = i+3
-
 		return range(first, min(2*i+1, self.node_count)+1, 2)		 
 
 	# Bool. True iff node i is a leaf node, i = 1,...,N
@@ -40,7 +38,7 @@ class Enc:
 		return f'r_{i}'
 	
 	# Int. p_j = i iff the parent of node j is node i, j = 2,...,N, i = 1,...,N
-	# p_j = 0 for node 1, it has no parent.
+	#      p_j = 0 for node 1, it has no parent.
 	def p(self, j): 
 		assert j >= 1 and j <= self.node_count
 		return f'p_{j}'
@@ -80,7 +78,7 @@ class Enc:
 		'''add asserts, which are atoms??'''
 		assert atom is not None
 		assert isinstance(atom, str)
-		if  atom == "": return
+		
 		self.constraints.append(f'(assert {atom})')
 
 	def add_decl_bool(self, name):
@@ -90,6 +88,14 @@ class Enc:
 	def add_decl_int(self, name):
 		assert name is not None
 		self.constraints.append(f'(declare-const {name} Int)')
+
+	def add_iff(self, b1, b2):
+		'''add iff constraint between b1 and b2'''
+		# TODO: Check that they are bool?
+		assert(b1 is not None)
+		assert(b2 is not None)
+		self.add_assert(self.mk_impl(b1, b2))
+		self.add_assert(self.mk_impl(b2, b1))
 
 	# Integer comparison operations
 	def mk_le(self, left, right):
@@ -251,24 +257,27 @@ class Enc:
 
 		# Declare variable domains:
 		for i in range(1, self.node_count+1):
+			#  Did Ammândio delete all this? 
 			self.add_assert(self.mk_le(self.l(i), self.node_count)) # l_i <= N
 			self.add_assert(self.mk_le(self.r(i), self.node_count)) # r_i <= N
 			self.add_assert(self.mk_le(self.p(i), self.node_count)) # p_i <= N
 			self.add_assert(self.mk_le(self.a(i), self.feat_count)) # a_i <= K
 			
-
 			self.add_assert(self.mk_ge(self.l(i), 0))               # l_i <= 0
 			self.add_assert(self.mk_ge(self.r(i), 0))               # r_i <= 0
 			self.add_assert(self.mk_ge(self.p(i), 0))               # p_i <= 0
 			self.add_assert(self.mk_ge(self.a(i), 0))               # a_i <= 0
 
-			# from here onwards: can I remove?
+			# p_j = i
+			self.add_assert(self.mk_ge(self.p(i), i//2))  # p_j >= j//2
+			self.add_assert(self.mk_le(self.p(i), i-1))   # p_j <= j-1
+
 			# l(i) in LR(i)
 			self.add_assert(self.mk_eq(self.mk_mod(self.l(i), 2), 0))             # l_i%2 == 0
 			l1_ge_i_plus_1 = self.mk_ge(self.l(i), i+1)
 			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), l1_ge_i_plus_1)) # not v(i) -> l_i >= i+1
 			self.add_assert(self.mk_le(self.l(i), min(2*i, self.node_count-1)))   # l_i <= min(2*i, N-1))
-#
+
 			# r(i) in RR(i)
 			r_i_mod_2_eq_1 = self.mk_eq(self.mk_mod(self.r(i), 2), 1)
 			self.add_assert(self.mk_or(self.mk_eq(self.r(i), 0), r_i_mod_2_eq_1)) # (r_i == 0) V (r_i%2 == 1)
@@ -284,6 +293,7 @@ class Enc:
 		for i in range(1, self.node_count+1):
 			self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.l(i), 0))); # v_i -> l_i = 0
 			self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.r(i), 0))); # v_i -> r_i = 0
+			# TODO: -1? Amândio 
 		
 		# the left child and the right child of node i are numbered consecutively (3)
 		for i in range(1, self.node_count+1):
@@ -294,6 +304,9 @@ class Enc:
 			l_eq_0_and_r_eq_0 = self.mk_and(l_eq_0, r_eq_0)
 			self.add_assert(self.mk_or(l_eq_0_and_r_eq_0, r_eq_l_plus_1))       # (l_i = 0 and r_i = 0) or (r_i = l_i+1)
 		
+		# Amândio:
+		# Question: Is this not inside the domain? l_i > min if not leaf
+		# Why comment (4)?
 		# non-leaf node must have a child (4)
 		for i in range(1, self.node_count+1):
 			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_gt(self.l(i), 0))) # not v_i -> l_i > 0 (non-leaves must have children)
@@ -304,17 +317,16 @@ class Enc:
 			for j in self.LR(i):
 				p_j_eq_i = self.mk_eq(self.p(j), i)
 				l_i_eq_j = self.mk_eq(self.l(i), j)
-				self.add_assert(self.mk_iff(p_j_eq_i, l_i_eq_j)) # p_j = i <-> l_i = j
+				self.add_iff(p_j_eq_i, l_i_eq_j)     # p_j = i <-> l_i = j
 			for j in self.RR(i):
 				p_j_eq_i = self.mk_eq(self.p(j), i)
 				r_i_eq_j = self.mk_eq(self.r(i), j)
-				self.add_assert(self.mk_iff(p_j_eq_i, r_i_eq_j)) # p_j = i <-> r_i = j
+				self.add_iff(p_j_eq_i, r_i_eq_j)     # p_j = i <-> r_i = j
 
 		# all nodes but node 1 have a parent (6).
 		# Just need to say that 1 does not have a parent, the rest is implicit in domain.
 
-		self.add_assert(self.mk_eq(self.p(1), 0))                # p_1 = 0
-		
+		self.add_assert(self.mk_eq(self.p(1), 0))    # p_1 = 0
 
 		## Encoding Semantics
 		# #  To discriminate a feature for value 0 at node j (7)
@@ -347,8 +359,7 @@ class Enc:
 				or_clause = self.mk_or_list(big_OR)
 				self.add_assert(self.mk_iff(self.d0(r, j), or_clause))
 
-		# 		
-		# 		
+		
 		# 			aux1 = self.mk_and(self.p(j, i), self.d0(r, i))
 		# 			if j in self.RR(i):
 		# 				aux2 = self.mk_and(self.a(r, i), self.r(i, j))
@@ -420,3 +431,4 @@ class Enc:
 		# 			class_lit = neg(self.c(j))
 
 		# 		self.add_sum_ge1(sum_lits, [neg(self.v(j)), class_lit])
+		
