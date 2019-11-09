@@ -96,13 +96,12 @@ class Enc:
 
 	def add_iff(self, b1, b2):
 		'''add iff constraint between b1 and b2'''
-		# TODO: Check that they are bool?
 		assert(b1 is not None)
 		assert(b2 is not None)
 		self.add_assert(self.mk_iff(b1, b2))
 
 	def add_comment(self, comment):
-		self.constraints.append('; ' + comment)
+		self.constraints.append(';⭐⭐⭐⭐⭐⭐⭐⭐⭐   ' + comment + '   ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐;')
 
 	# Integer comparison operations
 	def mk_le(self, left, right):
@@ -194,9 +193,10 @@ class Enc:
 			if is_leaf == 'false':
 				print(f'l {i} {model[self.l(i)]}')
 				print(f'r {i} {model[self.r(i)]}')
-				print(f'a {i} {model[self.a(i)]}')
+				print(f'a {model[self.a(i)]} {i}')
 			else:
-				print(f'c {i} {model[self.c(i)]}')
+				lbl = '1' if model[self.c(i)]=='true' else '0'
+				print(f'c {i} {lbl}')
 
 	def print_model(self,model):
 		'''prints SAT model'''
@@ -218,7 +218,7 @@ class Enc:
 				feature_split = model[self.a(i)]
 				print(f'{i} [label="{i} : f{feature_split}"]')
 			else:
-				class_ = model[self.c(i)]
+				class_ = "1" if model[self.c(i)] == "true" else "0"
 				label = f'{i} : {class_}'
 				print(f'{i} [label="{label}", style=filled, color="#DFDFDF"]')
 
@@ -266,10 +266,7 @@ class Enc:
 		# Declare variable domains:
 		self.add_comment('Variables domain')
 		for i in range(1, self.node_count+1):
-			#  Did Ammândio delete all this? 
 			self.add_assert(self.mk_le(self.a(i), self.feat_count)) 	# a_i <= K
-			#  self.add_assert(self.mk_ge(self.l(i), 0))               	# l_i >= 0
-			#  self.add_assert(self.mk_ge(self.r(i), 0))               	# r_i >= 0
 			self.add_assert(self.mk_ge(self.a(i), 0))               	# a_i >= 0
 
 			# p_j = i
@@ -287,7 +284,7 @@ class Enc:
 			self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.r(i), 0))); # v_i -> r_i = 0
 			self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.l(i), 0))); # v_i -> l_i = 0
 		
-		# the left child and the right child of node i are numbered consecutively or they are bothe zero(3)
+		# the left child and the right child of node i are numbered consecutively or they are bothe zero (3)
 		self.add_comment('the left child and the right child of node i are numbered consecutively or they are both zero (3)')
 		for i in range(1, self.node_count+1):
 			l_plus_1 = self.mk_sum(self.l(i), 1)
@@ -336,12 +333,6 @@ class Enc:
 				r_i_eq_j = self.mk_eq(self.r(i), j)
 				self.add_iff(p_j_eq_i, r_i_eq_j)     # p_j = i <-> r_i = j
 
-		# all nodes but node 1 have a parent (6).
-		# Just need to say that 1 does not have a parent, the rest is implicit in domain.
-		# I think this is also implicit in the domain xD
-		self.add_comment('1 does not have a parent')
-		self.add_assert(self.mk_eq(self.p(1), 0))    # p_1 = 0
-
 		## Encoding Semantics
 		# To discriminate a feature for value 0 at node j (7)
 		self.add_comment('discriminate feature for value 0 (7)')
@@ -376,21 +367,21 @@ class Enc:
 				or_clause = self.mk_or_list(big_OR)
 				self.add_assert(self.mk_iff(self.d1(r, j), or_clause))
 
-		# # # Using a feature r at node j (9)
-		# # for r in range(1, self.feat_count):
-		# # 	for j in range(2, self.node_count+1):
-		# # 		for i in range(j//2, j): # big AND
-		# # 			#self.add_constraint([self.u(r, i)])
-		# # 			#self.add_impl(self.p(j, i), neg(self.a(r, j)))
-		# # 			self.add_constraint([neg(self.u(r, i)), neg(self.p(j, i)), neg(self.a(r, j))])
+		# Using a feature r at node j (9)
+		# for r in range(1, self.feat_count):
+		# 	for j in range(2, self.node_count+1):
+		# 		for i in range(j//2, j): # big AND
+		# 			#self.add_constraint([self.u(r, i)])
+		# 			#self.add_impl(self.p(j, i), neg(self.a(r, j)))
+		# 			self.add_constraint([neg(self.u(r, i)), neg(self.p(j, i)), neg(self.a(r, j))])
 				
-		# # 		big_OR = []
-		# # 		for i in range(j//2, j): # big OR
-		# # 			aux = self.mk_and(self.u(r, i), self.p(j, i))
-		# # 			big_OR.append(aux)
-		# # 		big_OR.append(self.u(r, j))
+		# 		big_OR = []
+		# 		for i in range(j//2, j): # big OR
+		# 			aux = self.mk_and(self.u(r, i), self.p(j, i))
+		# 			big_OR.append(aux)
+		# 		big_OR.append(self.u(r, j))
 
-		# # 		self.add_lit_iff_clause(self.u(r, j), big_OR)
+		# 		self.add_lit_iff_clause(self.u(r, j), big_OR)
 
 		# For a non-leaf node j, one feature is used (10)
 		self.add_comment('For a non-leaf node j, one feature is used (10)')
@@ -411,8 +402,8 @@ class Enc:
 		#  is associated with the positive class (13)
 		#  samples is a list of samples, sample[:-1] are features
 		#  and sample[-1] is the class (for sample in samples)
-		self.add_comment('any positive example must be discriminated if the leaf node is associated with the negative class (12)')
-		self.add_comment('any negative example must be discriminated if the leaf node is associated with the positive class (13)')
+		self.add_comment('Any positive example must be discriminated if the leaf node is associated with the negative class (12)')
+		self.add_comment('Any negative example must be discriminated if the leaf node is associated with the positive class (13)')
 
 		for j in range(2, self.node_count+1):
 			for q in samples:
@@ -428,5 +419,6 @@ class Enc:
 				else: # q[-1] == 0, class is 0
 					class_lit = self.c(j)
 
-				self.add_assert(self.mk_impl(self.mk_and(self.v(j), class_lit), self.mk_or_list(big_or))) # (v_j and class_lit) -> big_or
+				v_j_and_class_lit = self.mk_and(self.v(j), class_lit)
+				self.add_assert(self.mk_impl(v_j_and_class_lit, self.mk_or_list(big_or))) # (v_j and class_lit) -> big_or
 		
