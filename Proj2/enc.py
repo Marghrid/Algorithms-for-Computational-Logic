@@ -233,10 +233,12 @@ class Enc:
 	def mk_smt_lib(self,print_comments):
 		'''encode constraints in SMT-LIB2'''
 		return_string = ''
+		return_string += '(set-option :produce-unsat-cores true)'
 		for c in self.constraints:
 			return_string += c + '\n'
 
 		return_string += '(check-sat)\n'
+		return_string += '(get-unsat-core)\n'
 		return_string += '(get-model)\n'
 
 		return return_string
@@ -278,8 +280,8 @@ class Enc:
 		# if i is a leaf then i has no children (2)
 		self.add_comment('if i is a leaf then i has no children (2)')
 		for i in range(1, self.node_count+1):
+			self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.r(i), 0))); # v_i -> r_i = 0
 			self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.l(i), 0))); # v_i -> l_i = 0
-			# self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.r(i), 0))); # v_i -> r_i = 0
 		
 		# the left child and the right child of node i are numbered consecutively or they are bothe zero(3)
 		self.add_comment('the left child and the right child of node i are numbered consecutively or they are both zero (3)')
@@ -310,7 +312,7 @@ class Enc:
 			# if i is not leaf, r_i is odd
 			r_i_is_odd = self.mk_eq(self.mk_mod(self.r(i), 2), 1)
 			i_not_leaf = self.mk_not(self.v(i))
-			self.add_assert(self.mk_impl(i_not_leaf, r_i_is_odd))  # (r_i == 0) V (r_i%2 == 1)
+			self.add_assert(self.mk_impl(i_not_leaf, r_i_is_odd))  # (-v_i) => (r_i%2 == 1)
 
 			# if i is not leaf, r_i >= i+2
 			r_i_ge_i_plus_2 = self.mk_ge(self.r(i), i+2)
