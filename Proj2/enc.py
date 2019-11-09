@@ -239,7 +239,7 @@ class Enc:
 	def mk_smt_lib(self,print_comments):
 		'''encode constraints in SMT-LIB2'''
 		return_string = ''
-		return_string += '(set-option :produce-unsat-cores true)'
+		return_string += '(set-option :produce-unsat-cores true)\n'
 		for c in self.constraints:
 			return_string += c + '\n'
 
@@ -401,8 +401,6 @@ class Enc:
 			a_j_gt_0 = self.mk_gt(self.a(j), 0)
 			self.add_assert(self.mk_impl(not_v_j, a_j_gt_0)) #  not(v_j) -> a_j > 0
 		
-		self.add_assert(self.mk_eq(self.a(1), 1))
-
 		#  For a leaf node j, no feature is used (11)
 		self.add_comment('For a leaf node j, no feature is used (11)')
 		for j in range(1, self.node_count+1):
@@ -419,7 +417,7 @@ class Enc:
 		self.add_comment('any negative example must be discriminated if the leaf node is associated with the positive class (13)')
 
 		for j in range(2, self.node_count+1):
-			for q in [samples[1]]:
+			for q in samples:
 				big_or = []
 				for r_e, sigma in enumerate(q[:-1]):
 					r = r_e+1 # because our r starts in 1 and enumerator starts in 0
