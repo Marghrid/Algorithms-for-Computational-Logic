@@ -219,9 +219,11 @@ class Enc:
 		for i in range(1, self.node_count+1):
 			is_leaf = model[self.v(i)]
 			if is_leaf == 'false':
-				print(f'{i} [label="{i} : f??"]')
+				feature_split = model[self.a(i)]
+				print(f'{i} [label="{i} : f{feature_split}"]')
 			else:
-				label = f'{i} : ??'
+				class_ = model[self.c(i)]
+				label = f'{i} : {class_}'
 				print(f'{i} [label="{label}", style=filled, color="#DFDFDF"]')
 
 		# print edges
