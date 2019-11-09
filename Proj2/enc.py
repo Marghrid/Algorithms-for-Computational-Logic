@@ -1,3 +1,5 @@
+import re
+
 class Enc:
 	def __init__(self, feat_count,  node_count):
 		 self.node_count = node_count
@@ -74,11 +76,15 @@ class Enc:
 	 	assert j >= 1 and j <= self.node_count
 	 	return f'c_{j}'
 
-	def add_assert(self, atom):
+	def add_assert(self, atom, name=''):
 		'''add asserts, which are atoms??'''
 		assert atom is not None
 		assert isinstance(atom, str)
-		self.constraints.append(f'(assert {atom})')
+		if name:
+			self.constraints.append(f'(assert (! {atom} :named {name}))')
+		else:
+			self.constraints.append(f'(assert {atom})')
+
 
 	def add_decl_bool(self, name):
 		assert name is not None
@@ -263,10 +269,10 @@ class Enc:
 		self.add_comment('Variables domain')
 		for i in range(1, self.node_count+1):
 			#  Did Ammândio delete all this? 
-			self.add_assert(self.mk_le(self.a(i), self.feat_count)) # a_i <= K
-			#  self.add_assert(self.mk_ge(self.l(i), 0))               # l_i <= 0
-			#  self.add_assert(self.mk_ge(self.r(i), 0))               # r_i <= 0
-			self.add_assert(self.mk_ge(self.a(i), 0))               # a_i <= 0
+			self.add_assert(self.mk_le(self.a(i), self.feat_count)) 	# a_i <= K
+			#  self.add_assert(self.mk_ge(self.l(i), 0))               	# l_i >= 0
+			#  self.add_assert(self.mk_ge(self.r(i), 0))               	# r_i >= 0
+			self.add_assert(self.mk_ge(self.a(i), 0))               	# a_i >= 0
 
 			# p_j = i
 			self.add_assert(self.mk_ge(self.p(i), i//2))  # p_j >= j//2
@@ -342,7 +348,8 @@ class Enc:
 		# To discriminate a feature for value 0 at node j (7)
 		self.add_comment('discriminate feature for value 0 (7)')
 		for r in range(1, self.feat_count+1):
-			# self.add_assert(self.mk_not(self.d0(r, 1)))
+			# Why was the line below commented
+			self.add_assert(self.mk_not(self.d0(r, 1)))
 			for j in range(2, self.node_count + 1):
 				big_OR = []
 				for i in range(j//2, j):
@@ -353,12 +360,12 @@ class Enc:
 						big_OR.append(right_and)
 
 				or_clause = self.mk_or_list(big_OR)
-				# self.add_assert(self.mk_iff(self.d0(r, j), or_clause))
+				self.add_assert(self.mk_iff(self.d0(r, j), or_clause))
 
 		# To discriminate a feature for value 1 at node j (8)
 		self.add_comment('discriminate feature for value 1 (8)')
 		for r in range(1, self.feat_count+1):
-			# self.add_assert(self.mk_not(self.d1(r, 1)))
+			self.add_assert(self.mk_not(self.d1(r, 1)))
 			for j in range(2, self.node_count + 1):
 				big_OR = []
 				for i in range(j//2, j):
@@ -369,23 +376,23 @@ class Enc:
 						big_OR.append(right_and)
 
 				or_clause = self.mk_or_list(big_OR)
-				# self.add_assert(self.mk_iff(self.d0(r, j), or_clause))
+				self.add_assert(self.mk_iff(self.d1(r, j), or_clause))
 
-		# # Using a feature r at node j (9)
-		# for r in range(1, self.feat_count):
-		# 	for j in range(2, self.node_count+1):
-		# 		for i in range(j//2, j): # big AND
-		# 			#self.add_constraint([self.u(r, i)])
-		# 			#self.add_impl(self.p(j, i), neg(self.a(r, j)))
-		# 			self.add_constraint([neg(self.u(r, i)), neg(self.p(j, i)), neg(self.a(r, j))])
+		# # # Using a feature r at node j (9)
+		# # for r in range(1, self.feat_count):
+		# # 	for j in range(2, self.node_count+1):
+		# # 		for i in range(j//2, j): # big AND
+		# # 			#self.add_constraint([self.u(r, i)])
+		# # 			#self.add_impl(self.p(j, i), neg(self.a(r, j)))
+		# # 			self.add_constraint([neg(self.u(r, i)), neg(self.p(j, i)), neg(self.a(r, j))])
 				
-		# 		big_OR = []
-		# 		for i in range(j//2, j): # big OR
-		# 			aux = self.mk_and(self.u(r, i), self.p(j, i))
-		# 			big_OR.append(aux)
-		# 		big_OR.append(self.u(r, j))
+		# # 		big_OR = []
+		# # 		for i in range(j//2, j): # big OR
+		# # 			aux = self.mk_and(self.u(r, i), self.p(j, i))
+		# # 			big_OR.append(aux)
+		# # 		big_OR.append(self.u(r, j))
 
-		# 		self.add_lit_iff_clause(self.u(r, j), big_OR)
+		# # 		self.add_lit_iff_clause(self.u(r, j), big_OR)
 
 		# For a non-leaf node j, one feature is used (10)
 		self.add_comment('For a non-leaf node j, one feature is used (10)')
@@ -393,6 +400,8 @@ class Enc:
 			not_v_j = self.mk_not(self.v(j))
 			a_j_gt_0 = self.mk_gt(self.a(j), 0)
 			self.add_assert(self.mk_impl(not_v_j, a_j_gt_0)) #  not(v_j) -> a_j > 0
+		
+		self.add_assert(self.mk_eq(self.a(1), 1))
 
 		#  For a leaf node j, no feature is used (11)
 		self.add_comment('For a leaf node j, no feature is used (11)')
@@ -404,13 +413,13 @@ class Enc:
 		#  associated with the negative class (12)
 		#  and any negative example must be discriminated if the leaf node
 		#  is associated with the positive class (13)
-		# samples is a list of samples, sample[:-1] are features
+		#  samples is a list of samples, sample[:-1] are features
 		#  and sample[-1] is the class (for sample in samples)
 		self.add_comment('any positive example must be discriminated if the leaf node is associated with the negative class (12)')
 		self.add_comment('any negative example must be discriminated if the leaf node is associated with the positive class (13)')
 
 		for j in range(2, self.node_count+1):
-			for q in samples:
+			for q in [samples[1]]:
 				big_or = []
 				for r_e, sigma in enumerate(q[:-1]):
 					r = r_e+1 # because our r starts in 1 and enumerator starts in 0
@@ -419,9 +428,9 @@ class Enc:
 					else: # sigma == 0, feature is 0
 						big_or.append(self.d0(r, j))
 				if q[-1] == 1: # class is 1
-					class_lit = self.c(j)
-				else: # q[-1] == 0, class is 0
 					class_lit = self.mk_not(self.c(j))
+				else: # q[-1] == 0, class is 0
+					class_lit = self.c(j)
 
-				self.add_assert(self.mk_impl(self.mk_or(self.v(j), class_lit), self.mk_or_list(big_or))) # (v_j V class_lit) -> big_or
+				self.add_assert(self.mk_impl(self.mk_and(self.v(j), class_lit), self.mk_or_list(big_or))) # (v_j and class_lit) -> big_or
 		
