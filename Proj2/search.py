@@ -20,5 +20,4 @@ class Search:
 
 	def is_sat(self) -> bool:
 		ret = self.best_model is not None
-		print(ret)
 		return ret

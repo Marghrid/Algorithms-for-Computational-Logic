@@ -11,7 +11,7 @@ import searches
 
 solver_dir = './solvers/'
 # solver_dir = ''
-solvers = ['z3 -in']
+solvers = ['z3 -in', 'cvc4 --lang smt --produce-models']
 solver = solver_dir + solvers[0]
 
 def get_model(lns):
@@ -69,7 +69,7 @@ if __name__ == "__main__":
 	search = searches.UNSAT_SAT(nms[0], samples)
 	num_nodes = search.get_first_n()
 	while True:
-		print("# encoding")
+		print(f"# encoding for {num_nodes} nodes")
 		e = Enc(nms[0], num_nodes)
 		e.enc(samples)
 

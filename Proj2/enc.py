@@ -101,7 +101,7 @@ class Enc:
 		self.add_assert(self.mk_iff(b1, b2))
 
 	def add_comment(self, comment):
-		self.constraints.append(';⭐⭐⭐⭐⭐⭐⭐⭐⭐   ' + comment + '   ⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐;')
+		self.constraints.append(';⭐⭐⭐⭐⭐⭐⭐⭐⭐  ' + comment + '  ⭐⭐⭐⭐⭐⭐⭐⭐⭐;')
 
 	# Integer comparison operations
 	def mk_le(self, left, right):
@@ -237,12 +237,10 @@ class Enc:
 	def mk_smt_lib(self,print_comments):
 		'''encode constraints in SMT-LIB2'''
 		return_string = ''
-		return_string += '(set-option :produce-unsat-cores true)\n'
 		for c in self.constraints:
 			return_string += c + '\n'
 
 		return_string += '(check-sat)\n'
-		return_string += '(get-unsat-core)\n'
 		return_string += '(get-model)\n'
 
 		return return_string
