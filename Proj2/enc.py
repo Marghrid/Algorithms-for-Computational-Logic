@@ -24,123 +24,148 @@ class Enc:
 
 	# Bool. True iff node i is a leaf node, i = 1,...,N
 	def v(self, i):
-		assert(i >= 1 and i <= self.node_count)
+		assert i >= 1 and i <= self.node_count
 		return f'v_{i}'
 
 	# Int. l_i = j iff node i has node j as the left child, j in LR(i), i = 1,...,N
 	#      l_i = 0 iff i is a leaf -> does not have any children
 	def l(self, i):
-		assert(i >= 1 and i <= self.node_count)
+		assert i >= 1 and i <= self.node_count
 		return f'l_{i}'
 
 	# Int. r_i = j iff node i has node j as the right child, j in RR(i), i = 1,...,N.
 	#      r_i = 0 iff i is a leaf -> does not have any children
 	def r(self, i):
-		assert(i >= 1 and i <= self.node_count)
+		assert i >= 1 and i <= self.node_count
 		return f'r_{i}'
 	
-	# Int. p_j = i iff the parent of node j is node i, j = 2,...,N, i = 1,...,N −1
+	# Int. p_j = i iff the parent of node j is node i, j = 2,...,N, i = 1,...,N
+	# p_j = 0 for node 1, it has no parent.
 	def p(self, j): 
-		assert(j >= 1 and j <= self.node_count)
+		assert j >= 1 and j <= self.node_count
 		return f'p_{j}'
 
-	# # 1 iff feature r is assigned to node j, r = 1,...,K, j = 1,...,N
-	# def a(self, r, j):
-	# 	assert(r >= 1 and r <= self.feat_count)
-	# 	assert(j >= 1 and j <= self.node_count)
-	# 	return f'a_{r}_{j}'
+	# Int. a_j = r iff feature r is assigned to node j, r = 1,...,K, j = 1,...,N
+	# a_j = 0 iff node has no feature assigned -> it is a leaf
+	def a(self, j):
+		assert j >= 1 and j <= self.node_count
+		return f'a_{j}'
 
 	# # 1 iff feature r is being discriminated against by node j, r = 1,...,K, j = 1,...,N,
 	# def u(self, r, j):
-	# 	assert(r >= 1 and r <= self.feat_count)
-	# 	assert(j >= 1 and j <= self.node_count)
+	# 	assert r >= 1 and r <= self.feat_count
+	# 	assert j >= 1 and j <= self.node_count
 	# 	return f'u_{r}_{j}'
 
-	# # 1 iff feature r is discriminated for value 0 by node j,
-	# #  or by one of its ancestors, r = 1,...,K, j = 1,...,N,
-	# def d0(self, r, j):
-	# 	assert(r >= 1 and r <= self.feat_count)
-	# 	assert(j >= 1 and j <= self.node_count)
-	# 	return f'd0_{r}_{j}'
+	# Bool. True iff feature r is discriminated for value 0 by node j,
+	#  or by one of its ancestors, r = 1,...,K, j = 1,...,N,
+	def d0(self, r, j):
+		assert r >= 1 and r <= self.feat_count
+		assert j >= 1 and j <= self.node_count
+		return f'd0_{r}_{j}'
 
-	# # 1 iff feature r is discriminated for value 1 by node j,
-	# #  or by one of its ancestors, r = 1,...,K, j = 1,...,N,
-	# def d1(self, r, j):
-	# 	assert(r >= 1 and r <= self.feat_count)
-	# 	assert(j >= 1 and j <= self.node_count)
-	# 	return f'd1_{r}_{j}'
+	# Bool. True iff feature r is discriminated for value 1 by node j,
+	#  or by one of its ancestors, r = 1,...,K, j = 1,...,N,
+	def d1(self, r, j):
+		assert r >= 1 and r <= self.feat_count
+		assert j >= 1 and j <= self.node_count
+		return f'd1_{r}_{j}'
 
 	# # 1 iff class of leaf node j is 1, j = 1,...,N.
 	# def c(self, j):
-	# 	assert(j >= 1 and j <= self.node_count)
+	# 	assert j >= 1 and j <= self.node_count
 	# 	return f'c_{j}'
 
 	def add_assert(self, atom):
 		'''add asserts, which are atoms??'''
-		assert(atom is not None)
-		assert(isinstance(atom, str))
+		assert atom is not None
+		assert isinstance(atom, str)
+		if  atom == "": return
 		self.constraints.append(f'(assert {atom})')
 
 	def add_decl_bool(self, name):
-		assert(name is not None)
+		assert name is not None
 		self.constraints.append(f'(declare-const {name} Bool)')
 
 	def add_decl_int(self, name):
-		assert(name is not None)
+		assert name is not None
 		self.constraints.append(f'(declare-const {name} Int)')
 
 	# Integer comparison operations
 	def mk_le(self, left, right):
-		assert(left is not None)
-		assert(right is not None)
+		assert left is not None
+		assert right is not None
 		return f'(<= {left} {right})'
 
 	def mk_ge(self, left, right):
-		assert(left is not None)
-		assert(right is not None)
+		assert left is not None
+		assert right is not None
 		return f'(>= {left} {right})'
 
 	def mk_gt(self, left, right):
-		assert(left is not None)
-		assert(right is not None)
+		assert left is not None
+		assert right is not None
 		return f'(> {left} {right})'
 
 	def mk_eq(self, left, right):
-		assert(left is not None)
-		assert(right is not None)
+		assert left is not None
+		assert right is not None
 		return f'(= {left} {right})'
 
 	# Integer arithmetic operations
 	def mk_mod(self, left, right):
-		assert(left is not None)
-		assert(right is not None)
+		assert left is not None
+		assert right is not None
 		return f'(mod {left} {right})'
 
 	def mk_sum(self, left, right):
-		assert(left is not None)
-		assert(right is not None)
+		assert left is not None
+		assert right is not None
 		return f'(+ {left} {right})'
 
 
 	# Boolean operations
 	def mk_not(self, arg):
-		assert(arg is not None)
+		assert arg is not None
 		return f'(not {arg})'
 
 	def mk_or(self, left, right):
-		assert(left is not None)
-		assert(right is not None)
+		assert left is not None
+		assert right is not None
 		return f'(or {left} {right})'
 
+	def mk_and(self, left, right):
+		assert left is not None
+		assert right is not None
+		return f'(and {left} {right})'
+
 	def mk_impl(self, left, right):
-		assert(left is not None)
-		assert(right is not None)
+		assert left is not None
+		assert right is not None
 		return f'(=> {left} {right})'
 
 	def mk_iff(self, left, right):
-		assert(left is not None)
-		assert(right is not None)
+		assert left is not None
+		assert right is not None
 		return f'(= {left} {right})'
+
+	def mk_or_list(self, or_list):
+		assert or_list is not None
+
+		if len(or_list) == 0:
+			return ""
+
+		if len(or_list) == 1: # so it doesn't have two '((', '))'.
+			return or_list[0]
+
+		# [a, b, c, d] becomes
+		# (or a (or b (or c d)))
+		ret_str = ''
+		for atom in or_list[:-1]:
+			ret_str += f'(or {atom} '
+		ret_str += f'{or_list[-1]}' + (len(or_list)-1)*')'
+
+		return ret_str
 
 	def print_solution(self, model):
 		'''
@@ -218,27 +243,38 @@ class Enc:
 			self.add_decl_int(self.l(i))
 			self.add_decl_int(self.r(i))
 			self.add_decl_int(self.p(i))
+			self.add_decl_int(self.a(i))
+
+			for r in range(1, self.feat_count+1):
+				self.add_decl_bool(self.d0(r, i))
+				self.add_decl_bool(self.d1(r, i))
 
 		# Declare variable domains:
 		for i in range(1, self.node_count+1):
 			self.add_assert(self.mk_le(self.l(i), self.node_count)) # l_i <= N
 			self.add_assert(self.mk_le(self.r(i), self.node_count)) # r_i <= N
 			self.add_assert(self.mk_le(self.p(i), self.node_count)) # p_i <= N
+			self.add_assert(self.mk_le(self.a(i), self.feat_count)) # a_i <= K
+			
 
 			self.add_assert(self.mk_ge(self.l(i), 0))               # l_i <= 0
 			self.add_assert(self.mk_ge(self.r(i), 0))               # r_i <= 0
 			self.add_assert(self.mk_ge(self.p(i), 0))               # p_i <= 0
+			self.add_assert(self.mk_ge(self.a(i), 0))               # a_i <= 0
 
 			# from here onwards: can I remove?
-			## l(i) in LR(i)
-			self.add_assert(self.mk_eq(self.mk_mod(self.l(i), 2), 0))            # l_i%2 == 0
-			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_ge(self.l(i), i+1))) # not v(i) -> l_i >= i+1
-			self.add_assert(self.mk_le(self.l(i), min(2*i, self.node_count-1)))  # l_i <= min(2*i, N-1))
+			# l(i) in LR(i)
+			self.add_assert(self.mk_eq(self.mk_mod(self.l(i), 2), 0))             # l_i%2 == 0
+			l1_ge_i_plus_1 = self.mk_ge(self.l(i), i+1)
+			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), l1_ge_i_plus_1)) # not v(i) -> l_i >= i+1
+			self.add_assert(self.mk_le(self.l(i), min(2*i, self.node_count-1)))   # l_i <= min(2*i, N-1))
 #
-			## r(i) in RR(i)
-			self.add_assert(self.mk_or(self.mk_eq(self.r(i), 0), self.mk_eq(self.mk_mod(self.r(i), 2), 1)))            # (r_i == 0) V (r_i%2 == 1)
-			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), self.mk_ge(self.r(i), i+2))) # not v(i) -> r_i >= i+2
-			self.add_assert(self.mk_le(self.r(i), min(2*i+1, self.node_count)))  # r_i <= min(2*i+1, N))
+			# r(i) in RR(i)
+			r_i_mod_2_eq_1 = self.mk_eq(self.mk_mod(self.r(i), 2), 1)
+			self.add_assert(self.mk_or(self.mk_eq(self.r(i), 0), r_i_mod_2_eq_1)) # (r_i == 0) V (r_i%2 == 1)
+			r1_ge_i_plus_2 = self.mk_ge(self.r(i), i+2)
+			self.add_assert(self.mk_impl(self.mk_not(self.v(i)), r1_ge_i_plus_2)) # not v(i) -> r_i >= i+2
+			self.add_assert(self.mk_le(self.r(i), min(2*i+1, self.node_count)))   # r_i <= min(2*i+1, N))
 
 		## Encoding Topology
 		# root node is not a leaf (1)
@@ -251,9 +287,12 @@ class Enc:
 		
 		# the left child and the right child of node i are numbered consecutively (3)
 		for i in range(1, self.node_count+1):
-			for j in self.LR(i):
-				l_plus_1 = self.mk_sum(self.l(i), 1)
-				self.add_assert(self.mk_eq(self.r(i), l_plus_1))  # r_i = l_i + 1
+			l_plus_1 = self.mk_sum(self.l(i), 1)
+			r_eq_l_plus_1 = self.mk_eq(self.r(i), l_plus_1)
+			l_eq_0 = self.mk_eq(self.l(i), 0)
+			r_eq_0 = self.mk_eq(self.r(i), 0)
+			l_eq_0_and_r_eq_0 = self.mk_and(l_eq_0, r_eq_0)
+			self.add_assert(self.mk_or(l_eq_0_and_r_eq_0, r_eq_l_plus_1))       # (l_i = 0 and r_i = 0) or (r_i = l_i+1)
 		
 		# non-leaf node must have a child (4)
 		for i in range(1, self.node_count+1):
@@ -277,13 +316,39 @@ class Enc:
 		self.add_assert(self.mk_eq(self.p(1), 0))                # p_1 = 0
 		
 
-		# ## Encoding Semantics
+		## Encoding Semantics
 		# #  To discriminate a feature for value 0 at node j (7)
-		# for r in range(1, self.feat_count+1):
-		# 	self.add_constraint([neg(self.d0(r, 1))])
-		# 	for j in range(2, self.node_count + 1):
-		# 		big_OR = []
-		# 		for i in range(j//2, j):
+		for r in range(1, self.feat_count+1):
+			self.add_assert(self.mk_not(self.d0(r, 1)))
+			for j in range(2, self.node_count + 1):
+				big_OR = []
+				for i in range(j//2, j):
+					left_and = self.mk_and(self.mk_eq(self.p(j), i), self.d0(r, i))
+					big_OR.append(left_and)
+					if j in self.RR(i):
+						right_and = self.mk_and(self.mk_eq(self.a(i), r), self.mk_eq(self.r(i), j))
+						big_OR.append(right_and)
+
+				or_clause = self.mk_or_list(big_OR)
+				self.add_assert(self.mk_iff(self.d0(r, j), or_clause))
+
+		# To discriminate a feature for value 1 at node j (8)
+		for r in range(1, self.feat_count+1):
+			self.add_assert(self.mk_not(self.d1(r, 1)))
+			for j in range(2, self.node_count + 1):
+				big_OR = []
+				for i in range(j//2, j):
+					left_and = self.mk_and(self.mk_eq(self.p(j), i), self.d1(r, i))
+					big_OR.append(left_and)
+					if j in self.LR(i):
+						right_and = self.mk_and(self.mk_eq(self.a(i), r), self.mk_eq(self.l(i), j))
+						big_OR.append(right_and)
+
+				or_clause = self.mk_or_list(big_OR)
+				self.add_assert(self.mk_iff(self.d0(r, j), or_clause))
+
+		# 		
+		# 		
 		# 			aux1 = self.mk_and(self.p(j, i), self.d0(r, i))
 		# 			if j in self.RR(i):
 		# 				aux2 = self.mk_and(self.a(r, i), self.r(i, j))
