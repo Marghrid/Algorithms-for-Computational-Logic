@@ -11,7 +11,7 @@ import time
 solver_dir = './solvers/'
 # solver_dir = ''
 solvers = ['z3 -in', 'cvc4 --lang smt --produce-models']
-solver = solver_dir + solvers[0]
+solver = solver_dir + solvers[1]
 
 def get_model(solver_output):
 	vals = dict()
@@ -19,13 +19,20 @@ def get_model(solver_output):
 		ln = ln.rstrip()
 		if not ln: continue
 
-		var_match = re.search(r'\(define-fun (\w+) \(\) (\w+)', ln)
-		if not var_match or not i+1 < len(solver_output)-1: continue
-		var = var_match.groups()[0]
-		
-		val_match = re.search(r'(\w+)', solver_output[i+1])
-		if not val_match: continue
-		val = val_match.groups()[0]
+		if 'z3' in solver:
+			var_match = re.search(r'\(define-fun (\w+) \(\) (\w+)', ln)
+			if not var_match or not i+1 < len(solver_output)-1: continue
+			var = var_match.groups()[0]
+			
+			val_match = re.search(r'(\w+)', solver_output[i+1])
+			if not val_match: continue
+			val = val_match.groups()[0]
+
+		elif 'cvc4' in solver:
+			match = re.search(r'\(define-fun (\w+) \(\) (\w+) (\w+)', ln)
+			if not match or not i+1 < len(solver_output)-1: continue
+			var = match.groups()[0]
+			val = match.groups()[2]
 
 		vals[var] = val
 	return vals
@@ -87,9 +94,9 @@ if __name__ == "__main__":
 	search = searches.SAT_UNSAT(3, upper_bound)
 	print(f'# using search {search}')
 	num_nodes = search.get_first_n()
+	e = Encoder(header[0])
 	while True:
 		print(f"# encoding for {num_nodes} nodes")
-		e = Encoder(header[0])
 		e.enc(samples, num_nodes)
 
 		smt = e.mk_smt_lib(False)

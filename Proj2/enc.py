@@ -2,10 +2,9 @@ import re
 
 class Encoder:
 	def __init__(self, feat_count):
-		 self.feat_count = feat_count
-		 self.constraints = []
-		 self.fresh = 0
-		 self.s_fresh = 0
+		self.feat_count = feat_count
+		self.fresh = 0
+		self.s_fresh = 0
 
 	def LR(self,i):
 		if (i+1)%2 == 0: first = i+1
@@ -244,6 +243,7 @@ class Encoder:
 	def enc(self, samples, node_count):
 		'''encode the problem'''
 		self.node_count = node_count
+		self.constraints = []
 		# Declare variables:
 		for i in range(1, self.node_count+1):
 			self.add_decl_bool(self.v(i))
