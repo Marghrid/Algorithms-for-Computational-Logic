@@ -1,4 +1,4 @@
-# Project 1: Encoding Decision Trees with SAT
+# Project 2: Encoding Decision Trees with SMT
 
 ## Run:
 
@@ -8,7 +8,7 @@ Example:
 
 `$ python3 proj1.py < t6_sat/t_1_6_7.smp`
 
-## About:
+## Encoding:
 
 This goal of this project is to build a tool that constructs a binary decision tree that correctly classifies a set of inputs by encoding the problem into SMT. The encoding used is based on the SAT encoding described in the paper [Learning Optimal Decision Trees with SAT](https://www.ijcai.org/proceedings/2018/189) by Narodytska et al. in IJCAI'18.
 
@@ -42,6 +42,17 @@ To encode the problem of finding a fitting decision tree with N nodes fo fit inp
 - a(i) = r iff feature r is assigned to node j, r = 1,...,K, j = 1,...,N
 
   a(i) = 0 iff i is a leaf (has no feature assigned)
+
+## Search:
+In order to find the minimum number of nodes required to build a decision tree consistent with all the inputs, i.e. the optimal solution, we experimented with the following search techniques:
+
+ - UNSAT-SAT search
+ 
+ - SAT-UNSAT search
+ 
+ - Binary Search
+ 
+ - Prograssion/Progressive(?) search
 
 ## Solvers:
 
