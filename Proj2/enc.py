@@ -1,8 +1,7 @@
 import re
 
-class Enc:
-	def __init__(self, feat_count,  node_count):
-		 self.node_count = node_count
+class Encoder:
+	def __init__(self, feat_count):
 		 self.feat_count = feat_count
 		 self.constraints = []
 		 self.fresh = 0
@@ -175,7 +174,8 @@ class Enc:
 
 		return ret_str
 
-	def print_solution(self, model):
+	def print_solution(self, model, node_count):
+		self.node_count = node_count
 		'''
 		prints solution output, according to the format:
 		- 'l i j' representing that j is a left (0) child of i
@@ -184,7 +184,7 @@ class Enc:
 		- 'a r i' the feature r is assigned to internal node i
 		'''
 
-		for i in range(1, self.node_count+1):
+		for i in range(1, node_count+1):
 			is_leaf = model[self.v(i)]
 			if is_leaf == 'false':
 				print(f'l {i} {model[self.l(i)]}')
@@ -201,14 +201,14 @@ class Enc:
 			print(f'# {var} = {model[var]}')
 		print('# === end of model')
 
-	def print_tree(self, model):
+	def print_tree(self, model, node_count):
 		''' prints the decision tree '''
 		print('# === tree')
 		print('digraph T {')
 		print('edge [penwidth=2]')
 
 		# print nodes
-		for i in range(1, self.node_count+1):
+		for i in range(1, node_count+1):
 			is_leaf = model[self.v(i)]
 			if is_leaf == 'false':
 				feature_split = model[self.a(i)]
@@ -219,7 +219,7 @@ class Enc:
 				print(f'{i} [label="{label}", style=filled, color="#DFDFDF"]')
 
 		# print edges
-		for i in range(1, self.node_count+1):
+		for i in range(1, node_count+1):
 			l_ch = int(model[self.l(i)])
 			r_ch = int(model[self.r(i)])
 			is_leaf = model[self.v(i)]
@@ -241,9 +241,9 @@ class Enc:
 
 		return return_string
 
-	def enc(self, samples):
+	def enc(self, samples, node_count):
 		'''encode the problem'''
-
+		self.node_count = node_count
 		# Declare variables:
 		for i in range(1, self.node_count+1):
 			self.add_decl_bool(self.v(i))

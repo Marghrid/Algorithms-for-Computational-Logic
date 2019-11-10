@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import sys,subprocess 
-from enc import Enc
+from enc import Encoder
 import argparse
 import re
 import searches
@@ -84,13 +84,13 @@ if __name__ == "__main__":
 		exit(0)
 
 	upper_bound = max(3, id3_sol) # because our solvver won't work with N < 3.
-	search = searches.Binary(3, upper_bound)
+	search = searches.SAT_UNSAT(3, upper_bound)
 	print(f'# using search {search}')
 	num_nodes = search.get_first_n()
 	while True:
 		print(f"# encoding for {num_nodes} nodes")
-		e = Enc(header[0], num_nodes)
-		e.enc(samples)
+		e = Encoder(header[0])
+		e.enc(samples, num_nodes)
 
 		smt = e.mk_smt_lib(False)
 
@@ -129,15 +129,16 @@ if __name__ == "__main__":
 
 
 	if search.is_sat():
-		model, cost = search.get_best_model()
-		assert cost == header[1] , f"{cost} != {header[1]}" # we got the same cost that was on the file
+		opt_model, opt_num_nodes = search.get_best_model()
+		if len(header) > 1:
+			assert opt_num_nodes == header[1] , f"{opt_num_nodes} != {header[1]}" # we got the same cost that was on the file
 		if print_model:
-			e.print_model(model)
+			e.print_model(opt_model)
 		if print_tree:
-			e.print_tree(model)
-		e.print_solution(model)
+			e.print_tree(opt_model, opt_num_nodes)
+		e.print_solution(opt_model, opt_num_nodes)
 
-		print("SAT; Optimal number of nodes: " + str(cost))
+		print("SAT; Optimal number of nodes: " + str(opt_num_nodes))
 
 	if print_time:
 		print("ID3 wall clock time:\t\t", id3_time)
