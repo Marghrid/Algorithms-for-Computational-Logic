@@ -8,23 +8,25 @@ from enc import Enc
 import argparse
 import re
 import searches
+from id3 import id3
+
 
 solver_dir = './solvers/'
 # solver_dir = ''
 solvers = ['z3 -in', 'cvc4 --lang smt --produce-models']
 solver = solver_dir + solvers[0]
 
-def get_model(lns):
+def get_model(solver_output):
 	vals = dict()
-	for i, ln in enumerate(lns):
+	for i, ln in enumerate(solver_output):
 		ln = ln.rstrip()
 		if not ln: continue
 
 		var_match = re.search(r'\(define-fun (\w+) \(\) (\w+)', ln)
-		if not var_match or not i+1 < len(lns)-1: continue
+		if not var_match or not i+1 < len(solver_output)-1: continue
 		var = var_match.groups()[0]
 		
-		val_match = re.search(r'(\w+)', lns[i+1])
+		val_match = re.search(r'(\w+)', solver_output[i+1])
 		if not val_match: continue
 		val = val_match.groups()[0]
 
@@ -32,16 +34,16 @@ def get_model(lns):
 	return vals
 
 def parse(f):
-	nms = None
+	header = None
 	samples = []
 	for l in f:
 		s = l.rstrip().split()
 		if not s: continue
-		if nms:
+		if header:
 			samples.append([int(l) for l in s])
 		else:
-			nms = [int(l) for l in s]
-	return (nms, samples)
+			header = [int(l) for l in s]
+	return (header, samples)
 
 if __name__ == "__main__":
 	debug_solver = False
@@ -65,59 +67,65 @@ if __name__ == "__main__":
 
 
 	print("# reading from stdin")
-	nms, samples = parse(sys.stdin)
-	search = searches.UNSAT_SAT(nms[0], samples)
+	header, samples = parse(sys.stdin)
+
+	print("# getting upper bound from ID3")
+	id3_sol = id3(samples)
+	if (id3_sol == -1):
+		print(f"UNSAT")
+		exit(0)
+
+	upper_bound = max(3, id3_sol) # because our solvver won't work with N < 3.
+	search = searches.Binary(3, upper_bound)
+	print(f'# using search {search}')
 	num_nodes = search.get_first_n()
 	while True:
 		print(f"# encoding for {num_nodes} nodes")
-		e = Enc(nms[0], num_nodes)
+		e = Enc(header[0], num_nodes)
 		e.enc(samples)
 
-		cnf = e.mk_smt_lib(False)
+		smt = e.mk_smt_lib(False)
 
 		if print_smt:
 		 	print("# encoded constraints")
-		 	print(cnf)
+		 	print(smt)
 		 	print("# END encoded constraints")
 
 		print("# sending to solver '" + str(solver) + "'")
 		if time:
 			solver = 'time -f "%E" ' + solver
 		p = subprocess.Popen(solver, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-		(po, pe) = p.communicate(input=bytes(cnf, encoding ='utf-8'))
+		(po, pe) = p.communicate(input=bytes(smt, encoding ='utf-8'))
 		
 		print("# decoding result from solver")
 		rc = p.returncode
-		lns = str(po, encoding ='utf-8').splitlines()
-		lnse = str(pe, encoding ='utf-8').split()
+		solver_output = str(po, encoding ='utf-8').splitlines()
+		solver_error = str(pe, encoding ='utf-8').split()
 		
 		if debug_solver:
-			print('\n'.join(lns), file=sys.stderr)
-			print(cnf, file=sys.stderr)
-			print(lns)
+			print('\n'.join(solver_output), file=sys.stderr)
+			print(smt, file=sys.stderr)
+			print(solver_output)
 
-		if lns[0] not in ['unsat', 'sat']:
+		if solver_output[0] not in ['unsat', 'sat']:
 			print("ERROR: something went wrong with the solver")
-			print(lns)
+			print(solver_output)
 			exit(1)
 
-		if search.is_done(lns[0], get_model(lns), num_nodes):
+		if search.is_done(solver_output[0], get_model(solver_output), num_nodes):
 			break
 		else:
-			num_nodes = search.get_next_n(num_nodes)
+			num_nodes = search.get_next_n(num_nodes, solver_output[0])
 
 
 	if search.is_sat():
 		model, cost = search.get_best_model()
+		assert cost == header[1] , f"{cost} != {header[1]}" # we got the same cost that was on the file
 		if print_model:
 			e.print_model(model)
 		if print_tree:
 			e.print_tree(model)
 		e.print_solution(model)
-		print("SAT; Optimal number of nodes: " + str(cost))
 
-	else:
-		print(f"UNSAT with {search.UB} nodes")
-		
-	
+		print("SAT; Optimal number of nodes: " + str(cost))
 

@@ -9,17 +9,13 @@ class Enc:
 		 self.s_fresh = 0
 
 	def LR(self,i):
-		if (i+1)%2 == 0:
-			first = i+1
-		else:
-			first = i+2
+		if (i+1)%2 == 0: first = i+1
+		else: first = i+2
 		return range(first, min(2*i, self.node_count-1)+1, 2)
 
 	def RR(self,i):
-		if (i+2)%2 == 1:
-			first = i+2
-		else:
-			first = i+3
+		if (i+2)%2 == 1: first = i+2
+		else: first = i+3
 		return range(first, min(2*i+1, self.node_count)+1, 2)		 
 
 	# Bool. True iff node i is a leaf node, i = 1,...,N
