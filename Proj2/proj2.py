@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
-# File:  stub.py
-# Author:  mikolas
-# Created on:  Sat Oct 12 10:30:54 WEST 2019
-# Copyright (C) 2019, Mikolas Janota
 import sys,subprocess 
 from enc import Enc
 import argparse
 import re
 import searches
 from id3 import id3
+import time
 
 
 solver_dir = './solvers/'
@@ -49,17 +46,17 @@ if __name__ == "__main__":
 	debug_solver = False
 
 	argparser = argparse.ArgumentParser()
-	argparser.add_argument('-t', '--print_tree', action='store_true', help='print decision tree')
-	argparser.add_argument('-m', '--print_model', action='store_true', help='print model')
-	argparser.add_argument('-s', '--print_smt', action='store_true', help='print smt-lib encoded constraints')
+	argparser.add_argument('-t', '--tree', action='store_true', help='print decision tree')
+	argparser.add_argument('-m', '--model', action='store_true', help='print model')
+	argparser.add_argument('-s', '--smt', action='store_true', help='print smt-lib encoded constraints')
 	argparser.add_argument('-v', '--verbose', action='store_true', help='print everything')
 	argparser.add_argument( '--time', action='store_true', help='time solver')
 	cmd_args = argparser.parse_args()
 
-	time = cmd_args.time
-	print_tree = cmd_args.print_tree
-	print_smt = cmd_args.print_smt
-	print_model = cmd_args.print_model
+	print_time = cmd_args.time
+	print_tree = cmd_args.tree
+	print_smt = cmd_args.smt
+	print_model = cmd_args.model
 	if cmd_args.verbose:
 		print_tree = True
 		print_smt = True
@@ -69,8 +66,19 @@ if __name__ == "__main__":
 	print("# reading from stdin")
 	header, samples = parse(sys.stdin)
 
+	if print_time:
+		solver = '/usr/bin/time -f "%e" ' + solver
+		id3_time = 0
+		solver_time = 0
+		num_solver_calls = 0
+
 	print("# getting upper bound from ID3")
+	if print_time: start = time.time()
 	id3_sol = id3(samples)
+	if print_time: 
+		end = time.time()
+		id3_time = end - start
+
 	if (id3_sol == -1):
 		print(f"UNSAT")
 		exit(0)
@@ -92,8 +100,6 @@ if __name__ == "__main__":
 		 	print("# END encoded constraints")
 
 		print("# sending to solver '" + str(solver) + "'")
-		if time:
-			solver = 'time -f "%E" ' + solver
 		p = subprocess.Popen(solver, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		(po, pe) = p.communicate(input=bytes(smt, encoding ='utf-8'))
 		
@@ -102,6 +108,10 @@ if __name__ == "__main__":
 		solver_output = str(po, encoding ='utf-8').splitlines()
 		solver_error = str(pe, encoding ='utf-8').split()
 		
+		if print_time:
+			solver_time += float(solver_error[-1])
+			num_solver_calls += 1
+
 		if debug_solver:
 			print('\n'.join(solver_output), file=sys.stderr)
 			print(smt, file=sys.stderr)
@@ -128,4 +138,9 @@ if __name__ == "__main__":
 		e.print_solution(model)
 
 		print("SAT; Optimal number of nodes: " + str(cost))
+
+	if print_time:
+		print("ID3 wall clock time:\t\t", id3_time)
+		print("total solver wall clock time:\t", solver_time)
+		print("number of solver calls:\t", num_solver_calls)
 

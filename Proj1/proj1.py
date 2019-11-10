@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# File:  stub.py
-# Author:  mikolas
-# Created on:  Sat Oct 12 10:30:54 WEST 2019
-# Copyright (C) 2019, Mikolas Janota
 import sys,subprocess 
 from enc import Enc, var, sign
 import argparse
@@ -59,7 +55,6 @@ if __name__ == "__main__":
 		print_tree = True
 		print_constraints = True
 		print_model = True
-
 
 	print("# reading from stdin")
 	nms, samples = parse(sys.stdin)
