@@ -52,7 +52,11 @@ In order to find the minimum number of nodes required to build a decision tree c
  
  - Binary Search
  
- - Prograssion/Progressive(?) search
+ - Progression/Progressive(?) search
+ 
+For all search tecnhiques, the lower bound was set to 3 nodes and the upper bound was set to the number of nodes in the solution returned by applying the ID3 algorithm to the set of inputs. ID3 always produces a valid decision tree but it might not be optimal, therefore we know that the optimal number of nodes is certainly lower or equal to that of a tree returned by ID3.
+
+Because our upper bound is always very close to the optimal number of nodes, we concluded UNSAT-SAT performed the worst for our scenario - it made the most calls to the solver.
 
 ## Solvers:
 
