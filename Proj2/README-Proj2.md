@@ -5,11 +5,11 @@
 
 ## Run:
 
-`$ python3 proj1.py < <sample_file>`
+`$ python3 proj2.py < <sample_file>`
 
 Example:
 
-`$ python3 proj1.py < t6_sat/t_1_6_7.smp`
+`$ python3 proj2.py < t6_sat/t_1_6_7.smp`
 
 ## About
 

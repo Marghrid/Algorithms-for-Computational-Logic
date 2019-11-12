@@ -1,4 +1,5 @@
 import re
+import math
 
 class Encoder:
 	def __init__(self, feat_count):
@@ -18,7 +19,7 @@ class Encoder:
 
 	# Bool. True iff node i is a leaf node, i = 1,...,N
 	def v(self, i):
-		assert i >= 1 and i <= self.node_count
+		assert i >= 1 and i <= self.node_count, f'i was {i}, node_count = {self.node_count}'
 		return f'v_{i}'
 
 	# Int. l_i = j iff node i has node j as the left child, j in LR(i), i = 1,...,N
@@ -70,14 +71,17 @@ class Encoder:
 	 	assert j >= 1 and j <= self.node_count
 	 	return f'c_{j}'
 
-	def add_assert(self, atom, name=''):
+	# Int. v_sum_i = t. Meaning that up to, and including, node i there are t leaf nodes.
+	#  i = 1,...,N, t = 0,...,i//2
+	def v_sum(self, i):
+		assert i >= 1 and i <= self.node_count
+		return f'v_sum_{i}'
+
+	def add_assert(self, atom):
 		'''add asserts, which are atoms??'''
 		assert atom is not None
 		assert isinstance(atom, str)
-		if name:
-			self.constraints.append(f'(assert (! {atom} :named {name}))')
-		else:
-			self.constraints.append(f'(assert {atom})')
+		self.constraints.append(f'(assert {atom})')
 
 
 	def add_decl_bool(self, name):
@@ -129,6 +133,15 @@ class Encoder:
 		assert right is not None
 		return f'(+ {left} {right})'
 
+	def mk_diff(self, left, right):
+		assert left is not None
+		assert right is not None
+		return f'(- {left} {right})'
+
+	def mk_mul(self, left, right):
+		assert left is not None
+		assert right is not None
+		return f'(* {left} {right})'
 
 	# Boolean operations
 	def mk_not(self, arg):
@@ -173,6 +186,23 @@ class Encoder:
 
 		return ret_str
 
+	def bool_to_int(self, b):
+		return f'(ite {b} 1 0)'
+
+	def def_v_sum(self, i):
+		''' Define v sum as the sum of leaf nodes up to i'''
+		
+		if i == 1:
+			int_v_i = self.bool_to_int(self.v(i))
+			return self.mk_eq(int_v_i, self.v_sum(i))
+
+		# Compute v_sum(i) as v_sum(i) = v_sum(i-1) + v(i)
+		int_v_i = self.bool_to_int(self.v(i))
+		v_sum_val = self.mk_sum(self.v_sum(i-1), int_v_i)
+
+		return self.mk_eq(v_sum_val, self.v_sum(i))
+
+
 	def print_solution(self, model, node_count):
 		self.node_count = node_count
 		'''
@@ -201,6 +231,8 @@ class Encoder:
 		print('# === end of model')
 
 	def print_tree(self, model, node_count):
+		self.node_count = node_count
+
 		''' prints the decision tree '''
 		print('# === tree')
 		print('digraph T {')
@@ -252,6 +284,7 @@ class Encoder:
 			self.add_decl_int(self.r(i))
 			self.add_decl_int(self.p(i))
 			self.add_decl_int(self.a(i))
+			self.add_decl_int(self.v_sum(i))
 
 			for r in range(1, self.feat_count+1):
 				self.add_decl_bool(self.u(r, i))
@@ -265,8 +298,20 @@ class Encoder:
 			self.add_assert(self.mk_ge(self.a(i), 0))               	# a_i >= 0
 
 			# p_j = i
-			self.add_assert(self.mk_ge(self.p(i), i//2))  # p_j >= j//2
-			self.add_assert(self.mk_le(self.p(i), i-1))   # p_j <= j-1
+			self.add_assert(self.mk_ge(self.p(i), i//2))  		# p_j >= j//2
+			self.add_assert(self.mk_le(self.p(i), i-1))   		# p_j <= j-1
+
+			# v_sum_i = t
+			self.add_assert(self.mk_ge(self.v_sum(i), 0))   	# v_sum_i >= 0
+			# In the paper they use floor... But for odd nodes like 5 
+			# We would allow 5//2 = 2 so only 2 nodes up to and including 5 could be leafs
+			# But we can have 2, 4 and 5, i.e. 3 nodes could be leafs.
+			self.add_assert(self.mk_le(self.v_sum(i), math.ceil(i/2)))  	# v_sum_i <= ceil(i/2)
+		
+		# Define variable:
+		self.add_comment('Variables definition')
+		for i in range(1, self.node_count+1):
+			self.add_assert(self.def_v_sum(i))
 
 		## Encoding Topology
 		# root node is not a leaf (1)
@@ -279,7 +324,7 @@ class Encoder:
 			self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.r(i), 0))); # v_i -> r_i = 0
 			self.add_assert(self.mk_impl(self.v(i), self.mk_eq(self.l(i), 0))); # v_i -> l_i = 0
 		
-		# the left child and the right child of node i are numbered consecutively or they are bothe zero (3)
+		# the left child and the right child of node i are numbered consecutively or they are both zero (3)
 		self.add_comment('the left child and the right child of node i are numbered consecutively or they are both zero (3)')
 		for i in range(1, self.node_count+1):
 			l_plus_1 = self.mk_sum(self.l(i), 1)
@@ -301,6 +346,8 @@ class Encoder:
 			self.add_assert(self.mk_impl(i_not_leaf, l_i_ge_i_plus_1))          # not v(i) -> l_i >= i+1
 
 			self.add_assert(self.mk_le(self.l(i), min(2*i, self.node_count-1))) # l_i <= min(2*i, N-1))
+			refined_UB = self.mk_mul(2, self.mk_diff(i, self.v_sum(i)))
+			self.add_assert(self.mk_le(self.l(i), refined_UB)) # l_i <= 2*(i - v_sum(i))
 
 		# r(i) in RR(i)
 		self.add_comment('r(i) in RR(i)')
@@ -315,6 +362,8 @@ class Encoder:
 			self.add_assert(self.mk_impl(i_not_leaf, r_i_ge_i_plus_2))          # not v(i) -> r_i >= i+2
 
 			self.add_assert(self.mk_le(self.r(i), min(2*i+1, self.node_count))) # r_i <= min(2*i+1, N))
+			refined_UB = self.mk_sum(1, self.mk_mul(2, self.mk_diff(i, self.v_sum(i))))
+			self.add_assert(self.mk_le(self.l(i), refined_UB)) # r_i <= 2*(i - v_sum(i)) + 1
 		
 		# if node i is a parent then it has a child (5)
 		self.add_comment('if node i is a parent then it has a child (5)')

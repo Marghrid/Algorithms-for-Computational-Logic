@@ -11,7 +11,7 @@ import time
 solver_dir = './solvers/'
 # solver_dir = ''
 solvers = ['z3 -in', 'cvc4 --lang smt --produce-models']
-solver = solver_dir + solvers[1]
+solver = solver_dir + solvers[0]
 
 def get_model(solver_output):
 	vals = dict()
