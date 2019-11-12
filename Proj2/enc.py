@@ -315,15 +315,6 @@ class Encoder:
 			self.add_assert(self.mk_ge(self.p(i), i//2))  		# p_j >= j//2
 			self.add_assert(self.mk_le(self.p(i), i-1))   		# p_j <= j-1
 
-			# CONFIRMAR COM A MARGARIDA QUE O DOMINIO NAO PRECISA DE SER EXPLICITO
-			# POR SEREM A SOMA DE V'S... VAO SER SEMPRE VALORES BOUNDED E CORRETOS
-			# v_sum_i = t
-			self.add_assert(self.mk_ge(self.v_sum(i), 0))   	# v_sum_i >= 0
-			# In the paper they use floor... But for odd nodes like 5 
-			# We would allow 5//2 = 2 so only 2 nodes up to and including 5 could be leafs
-			# But we can have 2, 4 and 5, i.e. 3 nodes could be leafs.
-			self.add_assert(self.mk_le(self.v_sum(i), math.ceil(i/2)))  	# v_sum_i <= ceil(i/2)
-		
 		# Define variable:
 		self.add_comment('Variables definition')
 		for i in range(1, self.node_count+1):
