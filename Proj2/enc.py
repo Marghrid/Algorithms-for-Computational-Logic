@@ -315,6 +315,8 @@ class Encoder:
 			self.add_assert(self.mk_ge(self.p(i), i//2))  		# p_j >= j//2
 			self.add_assert(self.mk_le(self.p(i), i-1))   		# p_j <= j-1
 
+			# CONFIRMAR COM A MARGARIDA QUE O DOMINIO NAO PRECISA DE SER EXPLICITO
+			# POR SEREM A SOMA DE V'S... VAO SER SEMPRE VALORES BOUNDED E CORRETOS
 			# v_sum_i = t
 			self.add_assert(self.mk_ge(self.v_sum(i), 0))   	# v_sum_i >= 0
 			# In the paper they use floor... But for odd nodes like 5 

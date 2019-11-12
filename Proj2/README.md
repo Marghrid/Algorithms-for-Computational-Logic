@@ -2,11 +2,11 @@
 
 ## Run:
 
-`$ python3 proj1.py < <sample_file>`
+`$ python3 proj2.py < <sample_file>`
 
 Example:
 
-`$ python3 proj1.py < t6_sat/t_1_6_7.smp`
+`$ python3 proj2.py < t6_sat/t_1_6_7.smp`
 
 ## Encoding:
 
@@ -39,9 +39,13 @@ To encode the problem of finding a fitting decision tree with N nodes fo fit inp
 
   p(j) = 0 for node 1, as it has no parent.
 
-- a(i) = r iff feature r is assigned to node j, r = 1,...,K, j = 1,...,N
+- a(i) = r iff feature r is assigned to node i, r = 1,...,K, i = 1,...,N
 
   a(i) = 0 iff i is a leaf (has no feature assigned)
+
+- v_sum(i) = t iff up to (and including) node i, there are t leaf nodes, t = 0,...,ceil(i/2), i = 1,...,N
+
+- not_v_sum(i) = t iff up to (and including) node i, there are t non-leaf nodes, t = ceil(i/2)+1,...,i, i = 1,...,N
 
 ## Search:
 In order to find the minimum number of nodes required to build a decision tree consistent with all the inputs, i.e. the optimal solution, we experimented with the following search techniques:
@@ -51,8 +55,6 @@ In order to find the minimum number of nodes required to build a decision tree c
  - SAT-UNSAT search
  
  - Binary Search
- 
- - Progression/Progressive(?) search
  
 For all search tecnhiques, the lower bound was set to 3 nodes and the upper bound was set to the number of nodes in the solution returned by applying the ID3 algorithm to the set of inputs. ID3 always produces a valid decision tree but it might not be optimal, therefore we know that the optimal number of nodes is certainly lower or equal to that of a tree returned by ID3.
 
