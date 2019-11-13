@@ -1,7 +1,7 @@
 from search import Search
 
 class UNSAT_SAT(Search):
-
+	''' UNSAT-SAT search '''
 	def is_done(self, outcome, model, model_cost) -> bool:
 		if outcome=='sat':
 			if model_cost < self.best_model_cost:
@@ -17,6 +17,7 @@ class UNSAT_SAT(Search):
 		return self.LB
 
 class SAT_UNSAT(Search):
+	''' SAT-UNSAT search '''
 	def is_done(self, outcome, model, model_cost) -> bool:
 		if outcome=='sat':
 			if model_cost < self.best_model_cost:
@@ -39,6 +40,7 @@ def odd(n):
 
 
 class Binary(Search):
+	''' Binary search '''
 	def is_done(self, outcome, model, model_cost) -> bool:
 		if outcome=='sat':
 			if model_cost < self.best_model_cost:
@@ -61,6 +63,7 @@ class Binary(Search):
 		return odd((self.UB + self.LB) // 2)
 
 class Progressive(Search):
+	''' Progressive search '''
 	def __init__(self, LB, UB):
 		super().__init__(LB, UB)
 		self.state = 'progressive'
