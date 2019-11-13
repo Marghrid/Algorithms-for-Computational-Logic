@@ -426,7 +426,7 @@ class Encoder:
 				self.add_assert(self.mk_iff(self.d1(r, j), or_clause))
 
 		# Using a feature r at node j (9)
-		for r in range(1, self.feat_count):
+		for r in range(1, self.feat_count+1):
 			for j in range(2, self.node_count+1):
 				for i in range(j//2, j): # big AND
 					u_and_p = self.mk_and(self.u(r, i), self.mk_eq(self.p(j), i))
@@ -437,7 +437,7 @@ class Encoder:
 				for i in range(j//2, j): # big OR
 					u_r_i_and_p_j_i = self.mk_and(self.u(r, i), self.mk_eq(self.p(j), i))
 					big_OR.append(u_r_i_and_p_j_i)
-				big_OR.append(self.mk_eq(self.a(j), i))
+				big_OR.append(self.mk_eq(self.a(j), r))
 
 				or_clause = self.mk_or_list(big_OR)
 				self.add_assert(self.mk_iff(self.u(r, j), or_clause))

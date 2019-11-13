@@ -11,7 +11,7 @@ import time
 solver_dir = './solvers/'
 # solver_dir = ''
 solvers = ['z3 -in', 'cvc4 --lang smt --produce-models']
-solver = solver_dir + solvers[1]
+solver = solver_dir + solvers[0]
 
 def get_model(solver_output):
 	vals = dict()
@@ -81,17 +81,25 @@ if __name__ == "__main__":
 
 	print("# getting upper bound from ID3")
 	if print_time: start = time.time()
-	id3_sol = id3(samples)
+	id3_cost, id3_model = id3(samples)
 	if print_time: 
 		end = time.time()
 		id3_time = end - start
 
-	if (id3_sol == -1):
+	if id3_cost == -1:
 		print(f"UNSAT")
 		exit(0)
 
-	upper_bound = max(3, id3_sol) # because our solvver won't work with N < 3.
-	search = searches.SAT_UNSAT(3, upper_bound)
+	print('# id3', id3_cost, id3_model)
+	# if id3_cost == 1, our solver does not deal with N<3. We want to return a
+	#  solution with N=3
+	# if id3_cost == 3, UB = LB, and due to our definition of Search, we must
+	#  compute another solution.
+	if id3_cost <= 3:
+		search = searches.Progressive(3, 3)
+	else:
+		search = searches.Progressive(3, id3_cost, id3_model)
+
 	print(f'# using search {search}')
 	num_nodes = search.get_first_n()
 	e = Encoder(header[0])
@@ -134,11 +142,9 @@ if __name__ == "__main__":
 		else:
 			num_nodes = search.get_next_n(num_nodes, solver_output[0])
 
-
 	if search.is_sat():
 		opt_model, opt_num_nodes = search.get_best_model()
-		if len(header) > 1:
-			assert opt_num_nodes == header[1] , f"{opt_num_nodes} != {header[1]}" # we got the same cost that was on the file
+		if len(header) > 1: assert opt_num_nodes == header[1] , f"{opt_num_nodes} != {header[1]}" # we got the same cost that was on the file
 		if print_model:
 			e.print_model(opt_model)
 		if print_tree:

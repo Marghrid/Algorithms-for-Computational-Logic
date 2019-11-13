@@ -1,4 +1,5 @@
 from math import log2
+from queue import SimpleQueue
 
 def entropy(inputs):
 	''' Shannon's entropy using log base 2 '''
@@ -15,9 +16,9 @@ def entropy(inputs):
 
 def split(inputs):
 	''' Splits input in the best attribute '''
+	assert not is_pure(inputs)
 	init_entropy = entropy(inputs)
 
-	highest_gain_feat = -1
 	highest_gain = -1
 	best_split = []
 	for i in range(len(inputs[0])-1):
@@ -26,7 +27,7 @@ def split(inputs):
 		i1 = [x for x in inputs if x[i] == 1]
 		assert len(i0) + len(i1) == len(inputs) # paranoia
 
-		if len(i0) == 0 or len(i1) == 0: continue
+		if len(i0) == 0 or len(i1) == 0: continue # feat i has always the same value
 
 		h_i0 = entropy(i0)
 		h_i1 = entropy(i1)
@@ -38,9 +39,9 @@ def split(inputs):
 
 		if gain_i > highest_gain:
 			highest_gain = gain_i
-			highest_gain_feat = i
-			best_split = [i0, i1]
-	if(highest_gain < 0): return -1
+			best_split = (i, i0, i1)
+
+	if(highest_gain < 0): return -1, None, None # All feats are the same and class is different - unsat
 
 	return best_split
 
@@ -48,19 +49,39 @@ def split(inputs):
 def is_pure(inputs):
 	return all(i[-1] == 0 for i in inputs) or all(i[-1] == 1 for i in inputs)
 
-
 def id3(samples):
-	if is_pure(samples):
-		return 1 # node is leaf
-	else:
-		splitted = split(samples)
-		# if there is no possible split because the inputs are inconsistent, -1 is returned.
-		if splitted == -1: return -1
+	node_counter = 0
+	Q = SimpleQueue()
+	Q.put((0,samples))
 
-		id3_0 = id3(splitted[0])
-		# if a -1 was returned, it must be propagated up the recursion
-		if id3_0 == -1: return -1
-		id3_1 = id3(splitted[1])
-		if id3_1 == -1: return -1
+	model = dict()
 
-		return 1 + id3_0 + id3_1
+	while not Q.empty():
+		node_counter += 1
+		node_id = node_counter
+		parent_id, current_samples = Q.get()
+
+		if node_id % 2 == 0:  # is even
+			model[f'l_{parent_id}'] = str(node_id)
+		else:                 # is odd
+			model[f'r_{parent_id}'] = str(node_id)
+
+		if is_pure(current_samples):
+			model[f'v_{node_id}'] = 'true'
+			c = current_samples[0][-1] # class value of all inputs
+			model[f'c_{node_id}'] = 'true' if c == 1 else 'false'
+			continue
+		
+		model[f'v_{node_id}'] = 'false'
+
+		feat, feat0, feat1 = split(current_samples)
+
+		if feat == -1: # unsat
+			return -1, None
+
+		model[f'a_{node_id}'] = str(feat+1)
+
+		Q.put((node_counter, feat0))
+		Q.put((node_counter, feat1))
+
+	return node_counter, model
