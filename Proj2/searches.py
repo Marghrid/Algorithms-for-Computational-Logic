@@ -60,3 +60,38 @@ class Binary(Search):
 	def get_first_n(self) -> int:
 		return odd((self.UB + self.LB) // 2)
 
+class Progressive(Search):
+	def __init__(self, LB, UB):
+		super().__init__(LB, UB)
+		self.state = 'progressive'
+
+	def is_done(self, outcome, model, model_cost) -> bool:
+		if self.state == 'progressive': return False
+		if outcome=='sat':
+			if model_cost < self.best_model_cost:
+				self.best_model = model
+				self.best_model_cost = model_cost
+			return self.LB == model_cost
+		else: # previous_outcome == 'unsat':
+			return self.LB == self.UB
+
+	def get_next_n(self, previous_n, previous_outcome) -> int:
+		assert (previous_n+2) % 2 == 1, f"{previous_n+2} is not odd"
+		assert previous_outcome in ['sat', 'unsat']
+		if self.state == 'progressive':
+			if previous_outcome == 'unsat':
+				self.LB = previous_n + 2
+				return min((previous_n-1) * 2 + 1, self.UB)
+			else: # previous_outcome == 'sat'
+				self.state = 'binary'
+				self.UB = previous_n
+				return odd((self.UB + self.LB) // 2)
+		else: # self.state == 'binary'
+			if previous_outcome == 'sat':
+				self.UB = previous_n
+			else: # previous_outcome == 'unsat':
+				self.LB = previous_n + 2
+			return odd((self.UB + self.LB) // 2)
+
+	def get_first_n(self) -> int:
+		return self.LB # which is 3
