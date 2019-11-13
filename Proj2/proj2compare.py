@@ -10,7 +10,7 @@ import operator
 
 solver_dir = './solvers/'
 # solver_dir = ''
-solvers = ['z3 -in', 'cvc4 --lang smt --produce-models']
+solvers = ['z3 -T:600 -in', 'cvc4 --lang smt --produce-models --tlimit=600000']
 
 def get_model(solver_output):
 	vals = dict()
