@@ -71,11 +71,17 @@ class Encoder:
 	 	assert j >= 1 and j <= self.node_count
 	 	return f'c_{j}'
 
-	# Int. v_sum_i = t. Meaning that up to, and including, node i there are t leaf nodes.
+	# Int. v_sum_i = t. Meaning that up to, and including, node i, there are t leaf nodes.
 	#  i = 1,...,N, t = 0,...,i//2
 	def v_sum(self, i):
 		assert i >= 1 and i <= self.node_count
 		return f'v_sum_{i}'
+	
+	# Int. not_v_sum_i = t. Meaning that up to, and including, node i, there are t non-leaf nodes.
+	#  i = 1,...,N, t = ceil(i//2),...,i
+	def not_v_sum(self, i):
+		assert i >= 1 and i <= self.node_count
+		return f'not_v_sum_{i}'
 
 	def add_assert(self, atom):
 		'''add asserts, which are atoms??'''
@@ -133,7 +139,7 @@ class Encoder:
 		assert right is not None
 		return f'(+ {left} {right})'
 
-	def mk_diff(self, left, right):
+	def mk_sub(self, left, right):
 		assert left is not None
 		assert right is not None
 		return f'(- {left} {right})'
@@ -201,6 +207,13 @@ class Encoder:
 		v_sum_val = self.mk_sum(self.v_sum(i-1), int_v_i)
 
 		return self.mk_eq(v_sum_val, self.v_sum(i))
+	
+	def def_not_v_sum(self, i):
+		''' Define not v sum as the difference between nodes up to i and v_sum(i)'''
+		
+		not_v_sum_val = self.mk_sub(i, self.v_sum(i))
+
+		return self.mk_eq(not_v_sum_val, self.not_v_sum(i))
 
 
 	def print_solution(self, model, node_count):
@@ -285,6 +298,7 @@ class Encoder:
 			self.add_decl_int(self.p(i))
 			self.add_decl_int(self.a(i))
 			self.add_decl_int(self.v_sum(i))
+			self.add_decl_int(self.not_v_sum(i))
 
 			for r in range(1, self.feat_count+1):
 				self.add_decl_bool(self.u(r, i))
@@ -301,17 +315,11 @@ class Encoder:
 			self.add_assert(self.mk_ge(self.p(i), i//2))  		# p_j >= j//2
 			self.add_assert(self.mk_le(self.p(i), i-1))   		# p_j <= j-1
 
-			# v_sum_i = t
-			self.add_assert(self.mk_ge(self.v_sum(i), 0))   	# v_sum_i >= 0
-			# In the paper they use floor... But for odd nodes like 5 
-			# We would allow 5//2 = 2 so only 2 nodes up to and including 5 could be leafs
-			# But we can have 2, 4 and 5, i.e. 3 nodes could be leafs.
-			self.add_assert(self.mk_le(self.v_sum(i), math.ceil(i/2)))  	# v_sum_i <= ceil(i/2)
-		
 		# Define variable:
 		self.add_comment('Variables definition')
 		for i in range(1, self.node_count+1):
 			self.add_assert(self.def_v_sum(i))
+			self.add_assert(self.def_not_v_sum(i))
 
 		## Encoding Topology
 		# root node is not a leaf (1)
@@ -346,8 +354,11 @@ class Encoder:
 			self.add_assert(self.mk_impl(i_not_leaf, l_i_ge_i_plus_1))          # not v(i) -> l_i >= i+1
 
 			self.add_assert(self.mk_le(self.l(i), min(2*i, self.node_count-1))) # l_i <= min(2*i, N-1))
-			refined_UB = self.mk_mul(2, self.mk_diff(i, self.v_sum(i)))
-			self.add_assert(self.mk_le(self.l(i), refined_UB)) # l_i <= 2*(i - v_sum(i))
+			refined_UB = self.mk_mul(2, self.mk_sub(i, self.v_sum(i)))
+			self.add_assert(self.mk_le(self.l(i), refined_UB)) 					# l_i <= 2*(i - v_sum(i))
+			refined_LB = self.mk_mul(2, self.mk_sub(self.not_v_sum(i), 1))
+			li_gt_ref_LB = self.mk_gt(self.l(i), refined_LB)
+			self.add_assert(self.mk_impl(i_not_leaf, li_gt_ref_LB)) 			# l_i > 2*(not_v_sum(i) - 1)
 
 		# r(i) in RR(i)
 		self.add_comment('r(i) in RR(i)')
@@ -362,8 +373,11 @@ class Encoder:
 			self.add_assert(self.mk_impl(i_not_leaf, r_i_ge_i_plus_2))          # not v(i) -> r_i >= i+2
 
 			self.add_assert(self.mk_le(self.r(i), min(2*i+1, self.node_count))) # r_i <= min(2*i+1, N))
-			refined_UB = self.mk_sum(1, self.mk_mul(2, self.mk_diff(i, self.v_sum(i))))
-			self.add_assert(self.mk_le(self.l(i), refined_UB)) # r_i <= 2*(i - v_sum(i)) + 1
+			refined_UB = self.mk_sum(1, self.mk_mul(2, self.mk_sub(i, self.v_sum(i))))
+			self.add_assert(self.mk_le(self.r(i), refined_UB)) 					# r_i <= 2*(i - v_sum(i)) + 1
+			refined_LB = self.mk_sub(self.mk_mul(2, self.not_v_sum(i)), 1)
+			ri_gt_ref_LB = self.mk_gt(self.r(i), refined_LB)
+			self.add_assert(self.mk_impl(i_not_leaf, ri_gt_ref_LB)) 			# l_i > 2*(not_v_sum(i) - 1)
 		
 		# if node i is a parent then it has a child (5)
 		self.add_comment('if node i is a parent then it has a child (5)')
