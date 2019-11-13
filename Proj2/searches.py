@@ -64,12 +64,18 @@ class Binary(Search):
 
 class Progressive(Search):
 	''' Progressive search '''
-	def __init__(self, LB, UB):
-		super().__init__(LB, UB)
+	def __init__(self, LB, UB, UB_model=None):
+		super().__init__(LB, UB, UB_model)
 		self.state = 'progressive'
 
 	def is_done(self, outcome, model, model_cost) -> bool:
-		if self.state == 'progressive': return False
+		if self.state == 'progressive':
+			if model_cost == self.UB and self.best_model:
+				if outcome == 'sat' and model_cost < self.best_model_cost:
+					self.best_model = model
+					self.best_model_cost = model_cost
+				return True 
+			return False
 		if outcome=='sat':
 			if model_cost < self.best_model_cost:
 				self.best_model = model

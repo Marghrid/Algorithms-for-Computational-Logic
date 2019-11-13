@@ -1,10 +1,15 @@
 class Search:
 	''' Abstract superclass for all search methods. Follows the Strategy design pattern. '''
-	def __init__(self, LB, UB):
+	def __init__(self, LB, UB, UB_model=None):
 		self.UB = UB
 		self.LB = LB
-		self.best_model = None
-		self.best_model_cost = self.UB +1
+		self.best_model = UB_model
+		self.best_model_cost = self.UB + 1
+		
+		if UB_model:
+			self.best_model_cost = self.UB
+			# No point in testing UB as we have the solution from id3 ;)
+			self.UB = UB-2
 
 	def is_done(self, outcome, model, model_cost) -> bool:
 		'''
