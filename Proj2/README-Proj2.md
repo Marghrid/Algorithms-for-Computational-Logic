@@ -1,7 +1,4 @@
-- Amândio Faustino: 83422
-- Margarida Ferreira: 80832
-
-# Project 1: Encoding Decision Trees with SAT
+# Project 2: Encoding Decision Trees with SMT
 
 ## Run:
 
@@ -11,40 +8,73 @@ Example:
 
 `$ python3 proj2.py < t6_sat/t_1_6_7.smp`
 
-## About
+## Encoding:
 
-This goal of this project is to build a tool that constructs a binary decision tree that correctly classifies a set of inputs by encoding the problem into SAT. The encoding used is the one described in the paper [Learning Optimal Decision Trees with SAT](https://www.ijcai.org/proceedings/2018/189) by Narodytska et al. in IJCAI'18. Several variations of this encoding (that did not compromise the correctness of the resulting tree) were tested:
+This goal of this project is to build a tool that constructs a binary decision tree that correctly classifies a set of inputs by encoding the problem into SMT. The encoding used is based on the SAT encoding described in the paper [Learning Optimal Decision Trees with SAT](https://www.ijcai.org/proceedings/2018/189) by Narodytska et al. in IJCAI'18. We replaced some of the boolean variables with integer variables, but no functions or predicates were used. We also included the additional inference constraints described in section 3.3 of this article. This addition made our search up to 20x faster.
 
-1. Try pairwise encoding instead of sequential encoding for cardinality constraints
-2. In constraints 4 and 10, remove the implication in the "<=1" part of the constraint
-3. Remove all "u" variables and respective constraints
+### Variables:
+To encode the problem of finding a fitting decision tree with N nodes fo fit inputs with K features the following variables were used:
 
-We concluded that pairwise encoding was faster than the sequential counter encoding for the vast majority of our instances. Even though sequential counter encoding yielded much better results when we added the alteration described in 2., pairwise encoding still outperformed it. We believe this is the case because pairwise encoding allows the solver to simplify clauses using subsumption in a preprocessing step, while sequential counter, with the addition of auxiliary variables, reduces the solver's ability to apply these improvements.
-The removal of "u" variables and respective constraints did not prove benefitial either: Even though in some instances it produced a significant speedup (up to 2x), in others it doubled the running time. 
+**Boolean**:
+- v(i) = True iff node i is a leaf node, i = 1,...,N
 
-In the final solution, we did applied only the first of the described alterations: we used pairwise encoding to encode all cardinality constraints.
+- c(i) = True iff class of leaf node i is 1, i = 1,...,N.
+
+- u(r,j) = True iff feature r is being discriminated against by node j, r = 1,...,K, j = 1,...,N.
+
+- d0(r,j) = True iff feature r is discriminated for value 0 by node j, or by one of its ancestors, r = 1,...,K, j = 1,...,N,
+
+- d1(r,j) = True iff feature r is discriminated for value 1 by node j, or by one of its ancestors, r = 1,...,K, j = 1,...,N,
+
+**Integer**:
+- r(i) = j iff node i has node j as the right child, i = 1,...,N, j in odd( [ i + 2; min(2i + 1, N) ] )
+
+  r(i) = 0 iff i is a leaf (does not have any children)
+  
+- l(i) = j iff node i has node j as the left child, i = 1,...,N, j in even( [ i + 1; min(2i, N - 1) ] )
+
+  l(i) = 0 iff i is a leaf (does not have any children)
+  
+- p(j) = i iff the parent of node j is node i, j = 2,...,N, i = 1,...,N
+
+  p(j) = 0 for node 1, as it has no parent.
+
+- a(i) = r iff feature r is assigned to node i, r = 1,...,K, i = 1,...,N
+
+  a(i) = 0 iff i is a leaf (has no feature assigned)
+
+- v_sum(i) = t iff up to (and including) node i, there are t leaf nodes, t = 0,...,ceil(i/2), i = 1,...,N
+
+- not_v_sum(i) = t iff up to (and including) node i, there are t non-leaf nodes, t = ceil(i/2)+1,...,i, i = 1,...,N
+
+## Search:
+In order to find the minimum number of nodes required to build a decision tree consistent with all the inputs, i.e. the optimal solution, we experimented with the following search techniques:
+
+ - UNSAT-SAT search
+ 
+ - SAT-UNSAT search
+ 
+ - Binary search
+ 
+ - Progressive search
+ 
+For all search tecnhiques, the lower bound was set to 3 nodes and the upper bound was set to the number of nodes in the solution returned by applying the ID3 algorithm to the set of inputs. ID3 always produces a valid decision tree but it might not be optimal, therefore we know that the optimal number of nodes is certainly lower or equal to that of a tree returned by ID3. When ID3 returns a solution of cost N, and the SMT call for N-2 is UNSAT, we conclude the ID3 solution is optimal and return it.
+
+Our experiments showed Binary search to be the fastest in most cases, closely followed by UNSAT-SAT search.
 
 ## Solvers:
 
-The following solvers were tested with our project:
+On the folder `solvers` there are Linux 64 bits executables for some SMT solvers:
 
- - MapleLCMDiscChronoBT-DL-v3 - [get](http://sat-race-2019.ciirc.cvut.cz/solvers/MapleLCMDiscChronoBT-DL-v3.zip)
- 
- - [CaDiCal](https://github.com/arminbiere/cadical) - [get](http://sat-race-2019.ciirc.cvut.cz/solvers/CaDiCaL.zip)
+ - [Z3](https://github.com/Z3Prover/z3)
+ - [CVC4](https://github.com/CVC4/CVC4)
 
- - MapleCBTCoreFirst - [get](http://sat-race-2019.ciirc.cvut.cz/solvers/MapleLCMdistCBTcoreFirst.zip)
- 
- - optsat - [get](http://sat-race-2019.ciirc.cvut.cz/solvers/optsat.zip)
- 
- - [cryptominisat](https://github.com/msoos/cryptominisat) - [get](http://sat-race-2019.ciirc.cvut.cz/solvers/cmsatv56-walksat.zip)
- 
- - [MergeSAT](https://github.com/conp-solutions/mergesat) - [get](http://sat-race-2019.ciirc.cvut.cz/solvers/MergeSAT.zip)
- 
- - smallsat - [get](http://sat-race-2019.ciirc.cvut.cz/solvers/smallsat.zip)
- 
- - [lingeling](https://github.com/arminbiere/lingeling) - [get](http://fmv.jku.at/lingeling/lingeling-bcj-78ebb86-180517.tar.gz)
- 
- - [Glucose4](https://www.labri.fr/perso/lsimon/glucose/) - [get](http://sat-race-2019.ciirc.cvut.cz/solvers/glucose-4.2.1.zip)
- 
- In the end, CaDiCal performed best in most instances.
- 
+In all of our experiments, Z3 significantly outperformed CVC4.
+
+-----
+## Authors:
+
+83422, [Amândio Faustino](https://github.com/Nandinski)
+
+80832, [Margarida Ferreira](https://github.com/Marghrid)
+

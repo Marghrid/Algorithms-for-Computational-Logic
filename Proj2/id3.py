@@ -1,5 +1,5 @@
 from math import log2
-from queue import SimpleQueue
+from queue import Queue
 
 def entropy(inputs):
 	''' Shannon's entropy using log base 2 '''
@@ -51,7 +51,7 @@ def is_pure(inputs):
 
 def id3(samples):
 	node_counter = 0
-	Q = SimpleQueue()
+	Q = Queue()
 	Q.put((0,samples))
 
 	model = dict()
