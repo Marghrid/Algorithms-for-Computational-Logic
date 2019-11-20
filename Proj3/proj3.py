@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import sys,subprocess
 
 unsat_msg = '__UNSAT__'
@@ -19,8 +20,8 @@ def parse_samples(f):
 def run(feature_count, node_count, samples):
     dbg=False # set to True if you want to see what goes into minizinc
     sol_in = ''
-    sol_in += 'int: n = {};\n'.format(node_count)
-    sol_in += 'int: k = {};\n'.format(feature_count)
+    sol_in += 'int: N = {};\n'.format(node_count)
+    sol_in += 'int: K = {};\n'.format(feature_count)
     # add main.mzn to the input
     with open('main.mzn') as mf:
         sol_in += '\n' + mf.read()
@@ -30,15 +31,15 @@ def run(feature_count, node_count, samples):
             if q[-1] == 1: # class is 1
                 class_lit = f'not c[{j}]'
             else: # q[-1] == 0, class is 0
-                class_lit = f'c[{j}]'
+                class_lit = f'    c[{j}]'
             c12 = f'constraint (v[{j}] /\\ {class_lit}) -> ( false '
             for f_e, sigma in enumerate(q[:-1]):
                 f = f_e+1 # because our r starts in 1 and enumerator starts in 0
 
                 c12 += f'\\/ {f} in d{sigma}[{j}] '
 
-            c12 += ');\n'
-            print("---------------- ", c12)
+            c12 += ');'
+            sol_in += c12 + '\n'
 
     # add print.mzn to the input
     with open('print.mzn') as mf:
@@ -46,7 +47,7 @@ def run(feature_count, node_count, samples):
     if dbg:
         sys.stderr.write(sol_in)
     # run solver
-    print('# run minizinc')
+    print(f'# run minizinc for N = {node_count}')
     p = subprocess.Popen(solver, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (po, pe) = p.communicate(input=bytes(sol_in, encoding ='utf-8'))
     print('# minizinc done')
@@ -65,5 +66,7 @@ if __name__ == "__main__":
     nms, samples = parse_samples(sys.stdin)
     print('# reading done')
     feature_count = nms[0]
-    tree = run(feature_count, 3, samples)
+    for num_nodes in range(3, 25, 2):
+        tree = run(feature_count, num_nodes, samples)
+        if tree: break
     print(tree)
