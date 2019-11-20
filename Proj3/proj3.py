@@ -1,12 +1,7 @@
-#!/usr/bin/env python3
-# File:  proj3
-# Author:  mikolas
-# Created on:  Thu Nov 14 16:44:14 WET 2019
-# Copyright (C) 2019, Mikolas Janota
 import sys,subprocess
 
 unsat_msg = '__UNSAT__'
-solver = ['minizinc', '--unsat-msg', unsat_msg,  '-']
+solver = ['minizinc/bin/minizinc', '--unsat-msg', unsat_msg,  '-']
 
 def parse_samples(f):
     nms = None
@@ -22,7 +17,6 @@ def parse_samples(f):
 
 # run minizinc on a fixed node_count
 def run(feature_count, node_count, samples):
-    global solver
     dbg=False # set to True if you want to see what goes into minizinc
     sol_in = ''
     sol_in += 'int: n = {};\n'.format(node_count)
@@ -31,9 +25,23 @@ def run(feature_count, node_count, samples):
     with open('main.mzn') as mf:
         sol_in += '\n' + mf.read()
     # add more constraints to sol_in if needed
-    # TODO
-    # add prn.mzn to the input
-    with open('prn.mzn') as mf:
+    for j in range(2, node_count+1):
+        for q in samples:
+            if q[-1] == 1: # class is 1
+                class_lit = f'not c[{j}]'
+            else: # q[-1] == 0, class is 0
+                class_lit = f'c[{j}]'
+            c12 = f'constraint (v[{j}] /\\ {class_lit}) -> ( false '
+            for f_e, sigma in enumerate(q[:-1]):
+                f = f_e+1 # because our r starts in 1 and enumerator starts in 0
+
+                c12 += f'\\/ {f} in d{sigma}[{j}] '
+
+            c12 += ');\n'
+            print("---------------- ", c12)
+
+    # add print.mzn to the input
+    with open('print.mzn') as mf:
         sol_in += '\n' + mf.read()
     if dbg:
         sys.stderr.write(sol_in)
