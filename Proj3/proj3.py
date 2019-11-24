@@ -22,8 +22,8 @@ def run(feature_count, node_count, samples):
     sol_in = ''
     sol_in += 'int: N = {};\n'.format(node_count)
     sol_in += 'int: K = {};\n'.format(feature_count)
-    # add main.mzn to the input
-    with open('main.mzn') as mf:
+    # add main2.mzn to the input
+    with open('main_pretty.mzn') as mf:
         sol_in += '\n' + mf.read()
     # add more constraints to sol_in if needed
     for j in range(2, node_count+1):

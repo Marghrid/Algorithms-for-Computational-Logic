@@ -66,7 +66,7 @@ constraint forall(f in FEATURES) (
 */
 
 constraint forall(j in 2..N)(
-  d0[j] = (d0[p[j]] union if j in RR[p[j]] then {a[p[j]]} else {} endif)
+  d0[j] == (d0[p[j]] union if j in RR[p[j]] then {a[p[j]]} else {} endif)
  );
  /*
 constraint forall(f in FEATURES) (
@@ -79,7 +79,7 @@ constraint forall(f in FEATURES) (
 */
 
 constraint forall(j in 2..N)(
-  d1[j] = (d1[p[j]] union if j in LR[p[j]] then {a[p[j]]} else {} endif)
+  d1[j] == (d1[p[j]] union if j in LR[p[j]] then {a[p[j]]} else {} endif)
  );
  
 % For a non-leaf node j, one feature is used (10)
