@@ -23,7 +23,7 @@ constraint (not v[1]);
 
 % define not_v_sum
 constraint (not_v_sum[1] = 1);
-constraint forall(i in 2..N)(not_v_sum[i] == not_v_sum[i-1] + not v[i];
+constraint forall(i in 2..N)(not_v_sum[i] == not_v_sum[i-1] + not v[i]);
 
 % if node is leaf, it has no left or right child
 constraint forall(i in NODES)(v[i] <-> (l[i] == 0));
