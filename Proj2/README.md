@@ -10,7 +10,7 @@ Example:
 
 ## Encoding:
 
-This goal of this project is to build a tool that constructs a binary decision tree that correctly classifies a set of inputs by encoding the problem into SMT. The encoding used is based on the SAT encoding described in the paper [Learning Optimal Decision Trees with SAT](https://www.ijcai.org/proceedings/2018/189) by Narodytska et al. in IJCAI'18.
+This goal of this project is to build a tool that constructs a binary decision tree that correctly classifies a set of inputs by encoding the problem into SMT. The encoding used is based on the SAT encoding described in the paper [Learning Optimal Decision Trees with SAT](https://www.ijcai.org/proceedings/2018/189) by Narodytska et al. in IJCAI'18. We replaced some of the boolean variables with integer variables, but no functions or predicates were used. We also included the additional inference constraints described in section 3.3 of this article. This addition made our search up to 20x faster.
 
 ### Variables:
 To encode the problem of finding a fitting decision tree with N nodes fo fit inputs with K features the following variables were used:
@@ -54,19 +54,22 @@ In order to find the minimum number of nodes required to build a decision tree c
  
  - SAT-UNSAT search
  
- - Binary Search
+ - Binary search
  
-For all search tecnhiques, the lower bound was set to 3 nodes and the upper bound was set to the number of nodes in the solution returned by applying the ID3 algorithm to the set of inputs. ID3 always produces a valid decision tree but it might not be optimal, therefore we know that the optimal number of nodes is certainly lower or equal to that of a tree returned by ID3.
+ - Progressive search
+ 
+For all search tecnhiques, the lower bound was set to 3 nodes and the upper bound was set to the number of nodes in the solution returned by applying the ID3 algorithm to the set of inputs. ID3 always produces a valid decision tree but it might not be optimal, therefore we know that the optimal number of nodes is certainly lower or equal to that of a tree returned by ID3. When ID3 returns a solution of cost N, and the SMT call for N-2 is UNSAT, we conclude the ID3 solution is optimal and return it.
 
-Because our upper bound is always very close to the optimal number of nodes, we concluded UNSAT-SAT performed the worst for our scenario - it made the most calls to the solver.
+Our experiments showed Binary search to be the fastest in most cases, closely followed by UNSAT-SAT search.
 
 ## Solvers:
 
 On the folder `solvers` there are Linux 64 bits executables for some SMT solvers:
 
- - [z3](https://github.com/Z3Prover/z3)
+ - [Z3](https://github.com/Z3Prover/z3)
  - [CVC4](https://github.com/CVC4/CVC4)
 
+In all of our experiments, Z3 significantly outperformed CVC4.
 
 ## Check correctness:
 

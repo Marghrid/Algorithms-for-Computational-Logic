@@ -71,7 +71,7 @@ if __name__ == "__main__":
 	print("# sending to solver '" + str(solver) + "'")
 	cnf = e.mk_cnf(False)
 	if time:
-		solver = 'time -f "%E" ' + solver
+		solver = '/usr/bin/time -f "%E" ' + solver
 	p = subprocess.Popen(solver, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	(po, pe) = p.communicate(input=bytes(cnf, encoding ='utf-8'))
 	
