@@ -38,16 +38,16 @@ constraint forall(i in NODES)(p[i] >= i div 2);
 % alldifferent_except_0(array [$X] of var int: vs): constrains the array of integers vs to be all
 %  different except those elements that are assigned the value 0.
 % overconstraining l and r
-constraint alldifferent_except_0(l);
-constraint alldifferent_except_0(r);
+%constraint alldifferent_except_0(l);
+%constraint alldifferent_except_0(r);
 
 % count(array [int] of var int: x, var int: y, var int: c): constrains c to be the number of occurrences of y in x.
 % overconstrain p: if it is not a leaf, it has exaclty two nodes calling it parent
-constraint forall(i in NODES)( (not v[i]) -> (count(p, i, 2)) );
+%constraint forall(i in NODES)( (not v[i]) -> (count(p, i, 2)) );
 
 
 % the left child and the right child of node i are numbered consecutively or they are both zero (3)
-constraint forall(i in NODES)((l[i] == 0 /\ r[i] == 0)\/(r[i] == l[i]+1)); % (l_i = 0 and r_i = 0) or (r_i = l_i+1)
+constraint forall(i in NODES)( (not v[i])->(r[i] == l[i]+1) ); % (l_i = 0 and r_i = 0) or (r_i = l_i+1)
 
 
 % SEMANTICS

@@ -1,13 +1,8 @@
 %run solver
 solve::seq_search([
-	    bool_search(v, input_order, indomain_min),
-	    int_search(not_v_sum, first_fail, indomain_min),
-	    int_search(l, first_fail, indomain_min),
-	    int_search(r, first_fail, indomain_min),
-	    int_search(p, first_fail, indomain_min),
-		int_search(a, first_fail, indomain_min),
-		set_search(d0, input_order, indomain_random),
-		set_search(d1, input_order, indomain_random)
+	    bool_search(v, input_order, indomain_max),
+	    %int_search(not_v_sum, first_fail, indomain_max),
+	    int_search(a, first_fail, indomain_min)
 ]) satisfy;
 
 % left and right child defined only for internal nodes

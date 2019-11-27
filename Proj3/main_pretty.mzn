@@ -16,14 +16,14 @@ array[NODES] of var set of 1..K: d0;
 % d1[i] is a set of all the features that have been discriminated against 1 in node i
 array[NODES] of var set of 1..K: d1;
 
-array[NODES] of var 1..N: not_v_sum;
+array[NODES] of var 1..(N div 2): not_v_sum;
 
 % 1 is not a leaf
 constraint (not v[1]);
 
 % define not_v_sum
 constraint (not_v_sum[1] = 1);
-constraint forall(i in 2..N)(not_v_sum[i] == not_v_sum[i-1] + not v[i]);
+constraint forall(i in 2..N) (not_v_sum[i] == not_v_sum[i-1] + not v[i]);
 
 % if node is leaf, it has no left or right child
 constraint forall(i in NODES)(v[i] <-> (l[i] == 0));
