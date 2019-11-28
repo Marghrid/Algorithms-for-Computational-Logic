@@ -7,7 +7,7 @@ unsat_msg = '__UNSAT__'
 solver = ['minizinc/bin/minizinc', '--unsat-msg', unsat_msg, '--solver', 'Chuffed', '-']
 
 searches = [searches.Binary, searches.UNSAT_SAT, searches.SAT_UNSAT]
-encodings = [('pretty', 'main_pretty.mzn'), ('fast', 'main_fast.mzn'), ('pretty_oc', 'main_pretty_overconstrained.mzn')]
+encodings = [('pretty', 'main_pretty.mzn'), ('pretty_oc', 'main_pretty_overconstrained.mzn')]
 solver_time = 0
 time_per_call = {}
 num_solver_calls = 0
