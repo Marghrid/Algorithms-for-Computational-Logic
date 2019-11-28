@@ -10,7 +10,7 @@ Example:
 
 ## Encoding:
 
-This goal of this project is to build a tool that constructs a binary decision tree that correctly classifies a set of inputs by encoding the problem into CSP. The encoding used is based on the SAT encoding described in the paper [Learning Optimal Decision Trees with SAT](https://www.ijcai.org/proceedings/2018/189) by Narodytska et al. in IJCAI'18. We replaced some of the boolean variables with integer or set of integer variables. We also included the additional inference constraints described in section 3.3 of this article.
+This goal of this project is to build a tool that constructs a binary decision tree that correctly classifies a set of inputs by encoding the problem into CSP. The encoding used is based on the SAT encoding described in the paper [Learning Optimal Decision Trees with SAT](https://www.ijcai.org/proceedings/2018/189) by Narodytska et al. in IJCAI'18. We replaced some of the boolean variables with integer variables. We also included the additional inference constraints described in section 3.3 of this article.
 
 ### Variables:
 To encode the problem of finding a fitting decision tree with N nodes fo fit inputs with K features the following variables were used:
@@ -20,10 +20,9 @@ To encode the problem of finding a fitting decision tree with N nodes fo fit inp
 
 - c(i) = True iff class of leaf node i is 1, i = 1,...,N.
 
-**Set of Integers**:
-- d0(j) = the set of features that are discriminated for value 0 by node j, or by one of its ancestors, j = 1,...,N,
+- d0(r, j) = True iff feature r is discriminated for value 0 by node j, or by one of its ancestors, j = 1,...,N,
 
-- d1(j) = the set of features that are discriminated for value 1 by node j, or by one of its ancestors, j = 1,...,N,
+- d1(r, j) = True iff feature r is discriminated for value 1 by node j, or by one of its ancestors, j = 1,...,N,
 
 **Integer**:
 - r(i) = j iff node i has node j as the right child, i = 1,...,N, j in odd( [ i + 2; min(2i + 1, N) ] )
@@ -66,7 +65,7 @@ We used [Minizinc](https://www.minizinc.org/) coupled with the following solvers
 
 - Gecode
 
-Chuffed outperformed the others.
+Chuffed signifficantly outperformed the others.
 
 -----
 ## Authors:
