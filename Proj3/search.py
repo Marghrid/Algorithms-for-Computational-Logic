@@ -42,4 +42,4 @@ class Search:
 		return self.best_model is not None
 
 	def __str__(self):
-		return f"{self.__class__.__name__}: UB = {self.UB}; LB = {self.LB}"
+		return f"{self.__class__.__name__}"

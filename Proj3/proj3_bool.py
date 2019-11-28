@@ -29,7 +29,7 @@ def run(feature_count, node_count, samples):
 	sol_in += 'int: N = {};\n'.format(node_count)
 	sol_in += 'int: K = {};\n'.format(feature_count)
 	# add main2.mzn to the input
-	with open('main_pretty.mzn') as mf:
+	with open('main_pretty_bool.mzn') as mf:
 		sol_in += '\n' + mf.read()
 	# add more constraints to sol_in if needed
 	for j in range(2, node_count+1):
@@ -42,7 +42,7 @@ def run(feature_count, node_count, samples):
 			for f_e, sigma in enumerate(q[:-1]):
 				f = f_e+1 # because our r starts in 1 and enumerator starts in 0
 
-				c12 += f'\\/ {f} in d{sigma}[{j}] '
+				c12 += f'\\/ d{sigma}[{f},{j}] '
 
 			c12 += ');'
 			sol_in += c12 + '\n'
@@ -66,7 +66,7 @@ def run(feature_count, node_count, samples):
 	if p.returncode != 0:
 		sys.stderr.write('something went wrong with the call to {} (exit code {})'.format(solver, p.returncode))
 		sys.stderr.write('\n>>' + '\n>>'.join(po.splitlines()))
-		sys.stderr.write('\nerr>>' + '\nerr>>'.join(pe.splitlines()))
+		sys.stderr.write('\nerr>>' + '\nerr>>'.join(pe))
 		exit(1)
 	# return None if unsat
 	return None if unsat_msg in po else po

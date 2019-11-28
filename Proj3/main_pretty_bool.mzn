@@ -11,10 +11,8 @@ array[NODES] of var 0..N: r; % r[i] = j iff node i has node j as the left child,
 array[NODES] of var 0..N-2: p; % p[i] 
 
 array[NODES] of var 0..K: a;
-% d0[i] is a set of all the features that have been discriminated against 0 in node i
-array[NODES] of var set of 1..K: d0; 
-% d1[i] is a set of all the features that have been discriminated against 1 in node i
-array[NODES] of var set of 1..K: d1;
+array[FEATURES,NODES] of var bool: d0;
+array[FEATURES,NODES] of var bool: d1;
 
 array[NODES] of var 1..(N div 2): not_v_sum;
 
@@ -33,24 +31,17 @@ constraint forall(i in NODES)(v[i] <-> (r[i] == 0));
 constraint forall(i in NODES)(not v[i] -> ( (l[i] == 2*not_v_sum[i]) /\ (p[l[i]] == i) ) );
 constraint forall(i in NODES)(not v[i] -> ( (r[i] == 2*not_v_sum[i]+1) /\ (p[r[i]] == i) ) );
 
-% at node 1, no feature has been discriminated yet
-constraint forall(f in FEATURES) ( not (f in d0[1]) /\ not (f in d1[1]) );
-/*
-constraint forall(j in 2..N)(
-  d0[j] == (d0[p[j]] union if j == r[p[j]] then {a[p[j]]} else {} endif)
-);
-constraint forall(j in 2..N)(
-  d1[j] == (d1[p[j]] union if j == l[p[j]] then {a[p[j]]} else {} endif)
-);*/
+constraint forall(r in FEATURES)(not d0[r,1]);
+constraint forall(r in FEATURES)(not d1[r,1]);
 
-constraint forall(j in 2..N)(
-  if j == l[p[j]]
-  % if j is a left child, add parent's a to d1
-  then (d0[j] == d0[p[j]]) /\ (d1[j] == (d1[p[j]] union { a[p[j]] }))
-  % if j is a right child, add parent's a to d0
-  else (d1[j] == d1[p[j]]) /\ (d0[j] == ( d0[p[j]] union { a[p[j]] }))
-  endif
-);
+constraint forall(f in FEATURES)(forall(j in 2..N)(
+  d0[f, j] <-> d0[f, p[j]] \/ 
+  (if j = r[p[j]] then (a[p[j]] == f) else false endif)
+));
+
+constraint forall(f in FEATURES)(forall(j in 2..N)(
+  d1[f, j] <-> d1[f, p[j]] \/ (if j = l[p[j]] then (a[p[j]] == f) else false endif)
+));
  
 % For a non-leaf node j, one feature is used (10)
 constraint forall(j in NODES)( (not v[j]) -> (a[j] > 0) );

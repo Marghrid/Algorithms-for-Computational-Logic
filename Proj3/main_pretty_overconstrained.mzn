@@ -33,6 +33,16 @@ constraint forall(i in NODES)(v[i] <-> (r[i] == 0));
 constraint forall(i in NODES)(not v[i] -> ( (l[i] == 2*not_v_sum[i]) /\ (p[l[i]] == i) ) );
 constraint forall(i in NODES)(not v[i] -> ( (r[i] == 2*not_v_sum[i]+1) /\ (p[r[i]] == i) ) );
 
+% alldifferent_except_0(array [$X] of var int: vs): constrains the array of integers vs to be all
+%  different except those elements that are assigned the value 0.
+% overconstraining l and r
+constraint alldifferent_except_0(l);
+constraint alldifferent_except_0(r);
+
+% count(array [int] of var int: x, var int: y, var int: c): constrains c to be the number of occurrences of y in x.
+% overconstrain p: if it is not a leaf, it has exaclty two nodes calling it parent
+constraint forall(i in NODES)( (not v[i]) -> (count(p, i, 2)) );
+
 % at node 1, no feature has been discriminated yet
 constraint forall(f in FEATURES) ( not (f in d0[1]) /\ not (f in d1[1]) );
 /*

@@ -6,6 +6,8 @@ from id3 import id3
 unsat_msg = '__UNSAT__'
 solver = ['minizinc/bin/minizinc', '--unsat-msg', unsat_msg, '--solver', 'Chuffed', '-']
 
+searches = [searches.Binary, searches.UNSAT_SAT, searches.SAT_UNSAT]
+encodings = [('pretty_bool', 'main_pretty.mzn'), ('fast_bool', 'main_fast.mzn')]
 solver_time = 0
 time_per_call = {}
 num_solver_calls = 0
@@ -23,13 +25,13 @@ def parse_samples(f):
 	return (nms, samples)
 
 # run minizinc on a fixed node_count
-def run(feature_count, node_count, samples):
+def run(feature_count, node_count, samples, encoding):
 	dbg=False # set to True if you want to see what goes into minizinc
 	sol_in = ''
 	sol_in += 'int: N = {};\n'.format(node_count)
 	sol_in += 'int: K = {};\n'.format(feature_count)
 	# add main2.mzn to the input
-	with open('main_pretty.mzn') as mf:
+	with open(encoding[1]) as mf:
 		sol_in += '\n' + mf.read()
 	# add more constraints to sol_in if needed
 	for j in range(2, node_count+1):
@@ -53,10 +55,10 @@ def run(feature_count, node_count, samples):
 	if dbg:
 		sys.stderr.write(sol_in)
 	# run solver
-	print(f'# run minizinc for N = {node_count}')
+	# print(f'# run minizinc for N = {node_count}')
 	p = subprocess.Popen(solver, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	(po, pe) = p.communicate(input=bytes(sol_in, encoding ='utf-8'))
-	print('# minizinc done')
+	#print('# minizinc done')
 	po = str(po, encoding ='utf-8')
 	pe = str(pe, encoding ='utf-8').split()
 	global solver_time, num_solver_calls, time_per_call
@@ -72,9 +74,9 @@ def run(feature_count, node_count, samples):
 	return None if unsat_msg in po else po
 
 if __name__ == "__main__":
-	print('# reading from standard input')
+	#print('# reading from standard input')
 	nms, samples = parse_samples(sys.stdin)
-	print('# reading done')
+	#print('# reading done')
 	feature_count = nms[0]
 	print_time = True
 
@@ -84,38 +86,43 @@ if __name__ == "__main__":
 	solver_time = 0
 	num_solver_calls = 0
 
-	print("# getting upper bound from ID3")
+	#print("# getting upper bound from ID3")
 	id3_cost, id3_model = id3(samples)
 
 	if id3_cost == -1:
 		print(f"UNSAT")
 		exit(0)
 
-	print('# id3', id3_cost)
+	#print('# id3', id3_cost)
+	times_dict = {}
+	for search_class in searches:
+		for encoding in encodings:
+			if id3_cost <= 3:
+				search = search_class(3, 3)
+			else:
+				search = search_class(3, id3_cost, id3_model)
 
-	if id3_cost <= 3:
-		search = searches.Binary(3, 3)
-	else:
-		search = searches.Binary(3, id3_cost, id3_model)
+			#print(f'# using search {search}')
+			num_nodes = search.get_first_n()
 
-	print(f'# using search {search}')
-	num_nodes = search.get_first_n()
+			while True:
+				tree = run(feature_count, num_nodes, samples, encoding)
+				solver_outcome = 'sat' if tree else 'unsat'
+				if search.is_done(solver_outcome, tree, num_nodes):
+					break
+				else:
+					num_nodes = search.get_next_n(num_nodes, solver_outcome)
 
-	while True:
-		tree = run(feature_count, num_nodes, samples)
-		solver_outcome = 'sat' if tree else 'unsat'
-		if search.is_done(solver_outcome, tree, num_nodes):
-			break
-		else:
-			num_nodes = search.get_next_n(num_nodes, solver_outcome)
+			if search.is_sat():
+				opt_model, opt_num_nodes = search.get_best_model()
+				#print(opt_model)
 
-	if search.is_sat():
-		opt_model, opt_num_nodes = search.get_best_model()
-		print(opt_model)
+				#print("# SAT; Optimal number of nodes: " + str(opt_num_nodes))
 
-		print("# SAT; Optimal number of nodes: " + str(opt_num_nodes))
-
-	if print_time:
-		print("# total solver wall clock time:\t", solver_time)
-		print("# number of solver calls:\t", num_solver_calls)
-		print("# time per solver call:\t", time_per_call)
+			if print_time:
+				times_dict[(str(search), encoding[0])] = solver_time
+				#print("# total solver wall clock time:\t", solver_time)
+				#print("# number of solver calls:\t", num_solver_calls)
+				#print("# time per solver call:\t", time_per_call)
+		for t in sorted(times_dict, key=times_dict.get):
+			print('{0: <9}'.format(t[0]), '{0: <12}'.format(t[1]), times_dict[t])	
