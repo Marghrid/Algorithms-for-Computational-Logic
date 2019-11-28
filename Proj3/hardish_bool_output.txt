@@ -1,0 +1,25 @@
+=== t_hardish//t_0.smp ===
+Binary    pretty_bool  5.99
+SAT_UNSAT pretty_bool  7.01
+UNSAT_SAT pretty_bool  9.85
+=== t_hardish//t_1.smp ===
+Binary    pretty_bool  2.67
+SAT_UNSAT pretty_bool  3.45
+UNSAT_SAT pretty_bool  4.15
+=== t_hardish//t_2.smp ===
+SAT_UNSAT pretty_bool  4.46
+Binary    pretty_bool  7.49
+UNSAT_SAT pretty_bool  8.850000000000001
+=== t_hardish//t_3.smp ===
+SAT_UNSAT pretty_bool  5.82
+Binary    pretty_bool  8.11
+UNSAT_SAT pretty_bool  10.04
+=== t_hardish//t_4.smp ===
+SAT_UNSAT pretty_bool  1.83
+Binary    pretty_bool  2.32
+UNSAT_SAT pretty_bool  3.67
+=== t_hardish//t_5.smp ===
+SAT_UNSAT pretty_bool  3.0700000000000003
+Binary    pretty_bool  4.5200000000000005
+UNSAT_SAT pretty_bool  5.95
+All OK - GREAT SUCCESS
