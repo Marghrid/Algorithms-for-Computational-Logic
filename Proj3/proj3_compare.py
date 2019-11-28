@@ -97,6 +97,10 @@ if __name__ == "__main__":
 	times_dict = {}
 	for search_class in searches:
 		for encoding in encodings:
+			solver_time = 0
+			time_per_call = {}
+			num_solver_calls = 0
+
 			if id3_cost <= 3:
 				search = search_class(3, 3)
 			else:
@@ -124,5 +128,5 @@ if __name__ == "__main__":
 				#print("# total solver wall clock time:\t", solver_time)
 				#print("# number of solver calls:\t", num_solver_calls)
 				#print("# time per solver call:\t", time_per_call)
-		for t in sorted(times_dict, key=times_dict.get):
-			print('{0: <9}'.format(t[0]), '{0: <12}'.format(t[1]), times_dict[t])	
+	for t in sorted(times_dict, key=times_dict.get):
+		print('{0: <9}'.format(t[0]), '{0: <12}'.format(t[1]), times_dict[t])	

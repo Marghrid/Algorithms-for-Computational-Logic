@@ -7,7 +7,7 @@ unsat_msg = '__UNSAT__'
 solver = ['minizinc/bin/minizinc', '--unsat-msg', unsat_msg, '--solver', 'Chuffed', '-']
 
 searches = [searches.Binary, searches.UNSAT_SAT, searches.SAT_UNSAT]
-encodings = [('pretty_bool', 'main_pretty_bool.mzn'), ('fast_bool', 'main_fast_bool.mzn')]
+encodings = [('pretty_bool', 'main_pretty_bool.mzn')]
 solver_time = 0
 time_per_call = {}
 num_solver_calls = 0
@@ -98,6 +98,10 @@ if __name__ == "__main__":
 	times_dict = {}
 	for search_class in searches:
 		for encoding in encodings:
+			solver_time = 0
+			time_per_call = {}
+			num_solver_calls = 0
+
 			if id3_cost <= 3:
 				search = search_class(3, 3)
 			else:
