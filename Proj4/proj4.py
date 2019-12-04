@@ -2,7 +2,7 @@
 import sys,subprocess,time
 
 solver = ['clingo']
-dbg=True
+dbg=False
 
 def parse_samples(f):
     header = None
@@ -52,18 +52,21 @@ def run(feature_count, node_count, samples):
     sol_in += 'feature(1..{}).\n'.format(feature_count)
     sol_in += f'{int((node_count+1)//2)} {{v(I): node(I)}} {int((node_count+1)//2)}.\n'
 
+    # You can only be a leaf with a given class if the path leading to you from the root
+    # discriminates samples with a different class
     for q in samples:
-        if q[-1] == 1: # class is 1
-            head = 'c(I, 0) '
-        else: # q[-1] == 0, class is 0
-            head = 'c(I, 1) '
-
-        d_string = []
+        d_list = []
         for r_e, sigma in enumerate(q[:-1]):
             r = r_e+1 # because our r starts in 1 and enumerator starts in 0
-            d_string += [f' d{sigma}({r}, I)']
-        sol_in += head + ':- ' + ','.join(d_string) + ', v(I).\n'
-
+            d_list.append(f'd{sigma}({r}, I)')
+    
+        if q[-1] == 1: # class is pos
+            class_lit = 'c(I, 0)'
+        else: # q[-1] == 0, class is neg
+            class_lit = 'c(I, 1)'
+        d_str = '; '.join(d_list)
+        sol_in += f'1 {{{d_str}}} {feature_count} :- {class_lit}, v(I).\n'
+    
     with open('main.lp') as mf:
         sol_in += '\n' + mf.read()
 
@@ -90,10 +93,9 @@ def run(feature_count, node_count, samples):
 if __name__ == "__main__":
     header, samples = parse_samples(sys.stdin)
     print ("# solver:", solver)
-    print("K", header[0])
-    for n in range(9, 11, 2):
-        amandio = run(header[0], n, samples)
-        if amandio: 
-            print(amandio)
+    for n in range(3, 25, 2):
+        oidnama = run(header[0], n, samples)
+        if oidnama: 
+            print(oidnama)
             break
 
