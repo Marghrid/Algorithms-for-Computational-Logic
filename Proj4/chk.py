@@ -62,6 +62,8 @@ def chk(nfts, nns, ls, samples):
             a[vs[1]] = vs[0]
             all_ns.add(vs[1])
     if len(all_ns) != nns:
+        print(f"Expected number of nodes: {nns}")
+        print(f"Solution had: {len(all_ns)}")
         err("wrong number of nodes")
 
     def check_structure(nd, visited):
