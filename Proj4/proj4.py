@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-# File:  proj4
-# Author:  mikolas
-# Created on:  Tue Nov 19 10:00:44 WET 2019
-# Copyright (C) 2019, Mikolas Janota
 import sys,subprocess,time
 
 solver = ['clingo']
@@ -33,14 +29,20 @@ def read_model(modlines):
         if has_answer: # parse answer set
             els = l.split()
             for e in els:
-                if e.startswith('bar('):
-                    tree.append('bar {} {}'.format(*get_int_atom_params(e)))
-                if e.startswith('foo('):
-                    tree.append('foo {} {}'.format(*get_int_atom_params(e)))
+                if e.startswith('v('):
+                    tree.append('v {}'.format(*get_int_atom_params(e)))
+                if e.startswith('l('):
+                    tree.append('l {} {}'.format(*get_int_atom_params(e)))
+                if e.startswith('r('):
+                    tree.append('r {} {}'.format(*get_int_atom_params(e)))
+                if e.startswith('a('):
+                    tree.append('a {} {}'.format(*get_int_atom_params(e)))
+                if e.startswith('c('):
+                    tree.append('c {} {}'.format(*get_int_atom_params(e)))
             break
         elif l.startswith('Answer'):
             has_answer = True
-    return '\n'.join(tree) if has_answer else None
+    return '\n'.join(sorted(tree)) if has_answer else None
 
 # run solver on given number of features, nodes, and samples
 def run(feature_count, node_count, samples):
@@ -48,8 +50,23 @@ def run(feature_count, node_count, samples):
     sol_in = ''
     sol_in += 'node(1..{}).\n'.format(node_count)
     sol_in += 'feature(1..{}).\n'.format(feature_count)
+    sol_in += f'{int((node_count+1)//2)} {{v(I): node(I)}} {int((node_count+1)//2)}.\n'
+
+    for q in samples:
+        if q[-1] == 1: # class is 1
+            head = 'c(I, 0) '
+        else: # q[-1] == 0, class is 0
+            head = 'c(I, 1) '
+
+        d_string = []
+        for r_e, sigma in enumerate(q[:-1]):
+            r = r_e+1 # because our r starts in 1 and enumerator starts in 0
+            d_string += [f' d{sigma}({r}, I)']
+        sol_in += head + ':- ' + ','.join(d_string) + ', v(I).\n'
+
     with open('main.lp') as mf:
         sol_in += '\n' + mf.read()
+
     options = [ '-n1' ]
     if dbg:
         sys.stderr.write(sol_in)
@@ -73,4 +90,10 @@ def run(feature_count, node_count, samples):
 if __name__ == "__main__":
     header, samples = parse_samples(sys.stdin)
     print ("# solver:", solver)
-    print(run(header[0], 3, samples))
+    print("K", header[0])
+    for n in range(9, 11, 2):
+        amandio = run(header[0], n, samples)
+        if amandio: 
+            print(amandio)
+            break
+
