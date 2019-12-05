@@ -70,24 +70,25 @@ def run(feature_count, node_count, samples):
     with open('main.lp') as mf:
         sol_in += '\n' + mf.read()
 
-    options = [ '-n1' ]
+    options = ['-n1', '--configuration=handy', '--heuristic=Berkmin']
     if dbg:
         sys.stderr.write(sol_in)
-    sys.stdout.write('# running {} {}\n'.format(solver, options))
+    sys.stdout.write(f'# running N = {node_count}: {solver} {options}\n')
     t0 = time.time()
-    p = subprocess.Popen(solver + options, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p = subprocess.Popen(solver + options, \
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (po, pe) = p.communicate(input=bytes(sol_in, encoding ='utf-8'))
     po = str(po, encoding ='utf-8').splitlines()
     pe = str(pe, encoding ='utf-8').splitlines()
     sys.stdout.write('# solver ended with exit code {} ({:.2f} s)\n'.format(p.returncode, time.time() - t0))
     if p.returncode % 10 != 0:
         sys.stderr.write('something went wrong with the call to {} (exit code {})'.format(solver, p.returncode))
-        sys.stderr.write('\n>>' + '\n>>'.join(po) + '\n')
-        sys.stderr.write('\nerr>>' + '\nerr>>'.join(pe) + '\n')
+        sys.stderr.write('\n>> ' + '\n>> '.join(po) + '\n')
+        if len(pe) > 0: sys.stderr.write('\nerr>> ' + '\nerr>> '.join(pe) + '\n')
         exit(1)
     if dbg:
-        sys.stderr.write('\n>>' + '\n>>'.join(po) + '\n')
-        sys.stderr.write('\nerr>>' + '\nerr>>'.join(pe) + '\n')
+        sys.stderr.write('\n>> ' + '\n>> '.join(po) + '\n')
+        if len(pe) > 0: sys.stderr.write('\nerr>> ' + '\nerr>> '.join(pe) + '\n')
     return None if p.returncode == 20 else read_model(po)
 
 if __name__ == "__main__":
