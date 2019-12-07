@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 import sys,subprocess,time
+import searches
+from id3 import id3
 
 solver = ['clingo']
 dbg=False
+
+solver_time = 0
+time_per_call = {}
+num_solver_calls = 0
 
 def parse_samples(f):
     header = None
@@ -80,6 +86,12 @@ def run(feature_count, node_count, samples):
     (po, pe) = p.communicate(input=bytes(sol_in, encoding ='utf-8'))
     po = str(po, encoding ='utf-8').splitlines()
     pe = str(pe, encoding ='utf-8').splitlines()
+    # save times:
+    global solver_time, num_solver_calls, time_per_call
+    solver_time += float(pe[-1])
+    time_per_call[node_count] = float(pe[-1])
+    num_solver_calls += 1
+
     sys.stdout.write('# solver ended with exit code {} ({:.2f} s)\n'.format(p.returncode, time.time() - t0))
     if p.returncode % 10 != 0:
         sys.stderr.write('something went wrong with the call to {} (exit code {})'.format(solver, p.returncode))
@@ -94,9 +106,45 @@ def run(feature_count, node_count, samples):
 if __name__ == "__main__":
     header, samples = parse_samples(sys.stdin)
     print ("# solver:", solver)
-    for n in range(3, 25, 2):
-        oidnama = run(header[0], n, samples)
-        if oidnama: 
-            print(oidnama)
-            break
+    print_time = True
 
+    if print_time:
+        solver = ['/usr/bin/time', '-f' ,'%e'] + solver
+    solver_time = 0
+    num_solver_calls = 0
+
+    print("# getting upper bound from ID3")
+    id3_cost, id3_model = id3(samples)
+
+    if id3_cost == -1:
+        print(f"UNSAT")
+        exit(0)
+
+    print('# id3', id3_cost)
+
+    if id3_cost <= 3:
+        search = searches.Binary(3, 3)
+    else:
+        search = searches.Binary(3, id3_cost, id3_model)
+
+    print(f'# using search {search}')
+    num_nodes = search.get_first_n()
+
+    while True:
+        oidnama = run(header[0], num_nodes, samples)
+        solver_outcome = 'sat' if oidnama else 'unsat'
+        if search.is_done(solver_outcome, oidnama, num_nodes):
+            break
+        else:
+            num_nodes = search.get_next_n(num_nodes, solver_outcome)
+
+    if search.is_sat():
+        opt_model, opt_num_nodes = search.get_best_model()
+        print(opt_model)
+
+        print("# SAT; Optimal number of nodes: " + str(opt_num_nodes))
+
+    if print_time:
+        print("# total solver wall clock time:\t", solver_time)
+        print("# number of solver calls:\t", num_solver_calls)
+        print("# time per solver call:\t", time_per_call)
