@@ -7,7 +7,7 @@ solver = ['clingo']
 dbg=False
 
 searches = [searches.Binary, searches.UNSAT_SAT, searches.SAT_UNSAT]
-encodings = [('basic', 'main.lp')]#, ('pretty_oc', 'main_pretty_overconstrained.mzn')]
+encodings = [('basic', 'main.lp'), ('v_sum', 'main_v_sum.lp')]
 
 solver_time = 0
 time_per_call = {}
