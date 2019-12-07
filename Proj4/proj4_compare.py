@@ -112,7 +112,7 @@ if __name__ == "__main__":
     print_time = True
 
     if print_time:
-        solver = ['/usr/bin/time', '-f' ,'%e'] + solver
+        solver = ['timeout', '300', '/usr/bin/time', '-f' ,'%e'] + solver
     solver_time = 0
     num_solver_calls = 0
 

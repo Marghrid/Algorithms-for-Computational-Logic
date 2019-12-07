@@ -73,7 +73,7 @@ def run(feature_count, node_count, samples):
         d_str = '; '.join(d_list)
         sol_in += f'1 {{{d_str}}} {feature_count} :- {class_lit}, v(I).\n'
     
-    with open('main.lp') as mf:
+    with open('main_v_sum.lp') as mf:
         sol_in += '\n' + mf.read()
 
     options = ['-n1', '--configuration=handy', '--heuristic=Berkmin']
@@ -137,14 +137,14 @@ if __name__ == "__main__":
             break
         else:
             num_nodes = search.get_next_n(num_nodes, solver_outcome)
-
-    if search.is_sat():
-        opt_model, opt_num_nodes = search.get_best_model()
-        print(opt_model)
-
-        print("# SAT; Optimal number of nodes: " + str(opt_num_nodes))
-
     if print_time:
         print("# total solver wall clock time:\t", solver_time)
         print("# number of solver calls:\t", num_solver_calls)
         print("# time per solver call:\t", time_per_call)
+
+    if search.is_sat():
+        opt_model, opt_num_nodes = search.get_best_model()
+        print("# SAT; Optimal number of nodes: " + str(opt_num_nodes))
+        print(opt_model)
+
+    
