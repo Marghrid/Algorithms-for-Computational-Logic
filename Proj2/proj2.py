@@ -96,9 +96,9 @@ if __name__ == "__main__":
 	# if id3_cost == 3, UB = LB, and due to our definition of Search, we must
 	#  compute another solution.
 	if id3_cost <= 3:
-		search = searches.Progressive(3, 3)
+		search = searches.Binary(3, 3)
 	else:
-		search = searches.Progressive(3, id3_cost, id3_model)
+		search = searches.Binary(3, id3_cost, id3_model)
 
 	print(f'# using search {search}')
 	num_nodes = search.get_first_n()

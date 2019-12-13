@@ -123,9 +123,9 @@ if __name__ == "__main__":
     print('# id3', id3_cost)
 
     if id3_cost <= 3:
-        search = searches.Binary(3, 3)
+        search = searches.SAT_UNSAT(3, 3)
     else:
-        search = searches.Binary(3, id3_cost, id3_model)
+        search = searches.SAT_UNSAT(3, id3_cost, id3_model)
 
     print(f'# using search {search}')
     num_nodes = search.get_first_n()
